@@ -1,0 +1,11 @@
+export { default as Login } from './Login';
+export { default as Dashboard } from './Dashboard';
+export { default as Restaurants } from './Restaurants';
+export { default as Admins } from './Admins';
+export { default as Subscriptions } from './Subscriptions';
+export { default as Plans } from './Plans';
+export { default as Analytics } from './Analytics';
+export { default as Settings } from './Settings';
+export { default as AuditLogs } from './AuditLogs';
+export { default as Support } from './Support';
+export { default as Reports } from './Reports';

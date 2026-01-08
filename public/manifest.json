@@ -1,0 +1,92 @@
+{
+  "short_name": "SA Admin",
+  "name": "PatLinks Super Admin",
+  "description": "PatLinks Platform Super Administrator Control Panel - INTERNAL USE ONLY",
+  "icons": [
+    {
+      "src": "favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "logo-superadmin-192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "logo-superadmin-512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#0f172a",
+  "background_color": "#0f172a",
+  "orientation": "portrait-primary",
+  "categories": ["business", "productivity"],
+  "scope": "/",
+  "lang": "en-US",
+  "dir": "ltr",
+  "prefer_related_applications": false,
+  "display_override": ["standalone", "minimal-ui"],
+  "iarc_rating_id": "",
+  "related_applications": [],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Dashboard",
+      "short_name": "Dashboard",
+      "description": "View super admin dashboard",
+      "url": "/dashboard",
+      "icons": [
+        {
+          "src": "logo-superadmin-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Restaurants",
+      "short_name": "Restaurants",
+      "description": "Manage all restaurants",
+      "url": "/restaurants",
+      "icons": [
+        {
+          "src": "logo-superadmin-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "short_name": "Users",
+      "description": "Manage platform users",
+      "url": "/users",
+      "icons": [
+        {
+          "src": "logo-superadmin-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Analytics",
+      "short_name": "Analytics",
+      "description": "View platform analytics",
+      "url": "/analytics",
+      "icons": [
+        {
+          "src": "logo-superadmin-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    }
+  ]
+}

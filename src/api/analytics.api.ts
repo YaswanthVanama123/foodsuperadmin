@@ -1,0 +1,88 @@
+import apiClient from './client';
+
+export interface RevenueDataPoint {
+  date: string;
+  revenue: number;
+  subscriptions: number;
+}
+
+export interface PlatformRevenueResponse {
+  totalRevenue: number;
+  periodRevenue: number;
+  growthRate: number;
+  data: RevenueDataPoint[];
+}
+
+export interface GrowthDataPoint {
+  month: string;
+  newRestaurants: number;
+  activeRestaurants: number;
+  churnedRestaurants: number;
+}
+
+export interface RestaurantGrowthResponse {
+  totalGrowth: number;
+  monthlyGrowth: number;
+  data: GrowthDataPoint[];
+}
+
+export interface TopRestaurant {
+  id: string;
+  name: string;
+  revenue: number;
+  subscriptionPlan: string;
+  activeUsers: number;
+  ordersCount: number;
+}
+
+export interface TopRestaurantsResponse {
+  restaurants: TopRestaurant[];
+  total: number;
+}
+
+export interface PlatformStats {
+  totalRestaurants: number;
+  activeRestaurants: number;
+  totalRevenue: number;
+  totalOrders: number;
+  totalCustomers: number;
+  avgOrderValue: number;
+  topCategory: string;
+  growthRate: number;
+}
+
+const analyticsApi = {
+  getPlatformRevenue: async (startDate: string, endDate: string): Promise<PlatformRevenueResponse> => {
+    const params = new URLSearchParams();
+    params.append('startDate', startDate);
+    params.append('endDate', endDate);
+
+    const response = await apiClient.get<PlatformRevenueResponse>(
+      `/api/superadmin/analytics/revenue?${params.toString()}`
+    );
+    return response.data;
+  },
+
+  getRestaurantGrowth: async (): Promise<RestaurantGrowthResponse> => {
+    const response = await apiClient.get<RestaurantGrowthResponse>(
+      '/api/superadmin/analytics/growth'
+    );
+    return response.data;
+  },
+
+  getTopRestaurants: async (): Promise<TopRestaurantsResponse> => {
+    const response = await apiClient.get<TopRestaurantsResponse>(
+      '/api/superadmin/analytics/top-restaurants'
+    );
+    return response.data;
+  },
+
+  getPlatformStats: async (): Promise<PlatformStats> => {
+    const response = await apiClient.get<PlatformStats>(
+      '/api/superadmin/analytics/stats'
+    );
+    return response.data;
+  },
+};
+
+export default analyticsApi;

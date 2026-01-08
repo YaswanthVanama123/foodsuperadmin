@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <!-- STRICT SECURITY META TAGS - PREVENT ANY PUBLIC INDEXING -->
+    <meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex, nocache" />
+    <meta name="googlebot" content="noindex, nofollow, noarchive, nosnippet, noimageindex" />
+    <meta name="bingbot" content="noindex, nofollow, noarchive, nosnippet, noimageindex" />
+    <meta name="referrer" content="no-referrer" />
+
+    <!-- PREVENT CACHING -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+
+    <!-- SECURITY HEADERS -->
+    <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+    <meta http-equiv="X-Frame-Options" content="DENY" />
+    <meta http-equiv="X-XSS-Protection" content="1; mode=block" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https:; frame-ancestors 'none';" />
+
+    <!-- APP META -->
+    <meta name="description" content="PatLinks Super Admin - Platform Control Panel - INTERNAL USE ONLY" />
+    <meta name="theme-color" content="#0f172a" />
+
+    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
+    <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo-superadmin-192.png" />
+    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+
+    <title>PatLinks Super Admin</title>
+
+    <style>
+      /* Dark Professional Loading Screen */
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+          'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+          sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+        color: #f1f5f9;
+        overflow: hidden;
+      }
+
+      #root {
+        min-height: 100vh;
+      }
+
+      /* Loading Screen */
+      .loading-screen {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+        z-index: 9999;
+        transition: opacity 0.3s ease-out;
+      }
+
+      .loading-screen.fade-out {
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .loading-logo {
+        width: 80px;
+        height: 80px;
+        margin-bottom: 24px;
+        background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 32px;
+        font-weight: 700;
+        color: white;
+        box-shadow: 0 20px 40px rgba(59, 130, 246, 0.3);
+        animation: pulse 2s ease-in-out infinite;
+      }
+
+      .loading-title {
+        font-size: 24px;
+        font-weight: 700;
+        color: #f1f5f9;
+        margin-bottom: 8px;
+        letter-spacing: -0.5px;
+      }
+
+      .loading-subtitle {
+        font-size: 14px;
+        color: #94a3b8;
+        margin-bottom: 32px;
+        font-weight: 500;
+      }
+
+      .loading-spinner {
+        width: 48px;
+        height: 48px;
+        border: 3px solid rgba(59, 130, 246, 0.1);
+        border-top-color: #3b82f6;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+
+      .security-badge {
+        position: absolute;
+        bottom: 32px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 20px;
+        background: rgba(239, 68, 68, 0.1);
+        border: 1px solid rgba(239, 68, 68, 0.3);
+        border-radius: 8px;
+        color: #fca5a5;
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+      }
+
+      .security-icon {
+        width: 16px;
+        height: 16px;
+        fill: currentColor;
+      }
+
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+
+      @keyframes pulse {
+        0%, 100% { transform: scale(1); opacity: 1; }
+        50% { transform: scale(1.05); opacity: 0.9; }
+      }
+
+      /* Prevent text selection during load */
+      .loading-screen * {
+        user-select: none;
+        -webkit-user-select: none;
+      }
+    </style>
+  </head>
+  <body>
+    <noscript>
+      <div style="display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; text-align: center; background: #0f172a; color: #f1f5f9;">
+        <div>
+          <h1 style="font-size: 24px; margin-bottom: 16px;">JavaScript Required</h1>
+          <p style="color: #94a3b8;">PatLinks Super Admin requires JavaScript to be enabled. Please enable JavaScript in your browser settings.</p>
+        </div>
+      </div>
+    </noscript>
+
+    <!-- Loading Screen -->
+    <div id="loading-screen" class="loading-screen">
+      <div class="loading-logo">SA</div>
+      <div class="loading-title">PatLinks Super Admin</div>
+      <div class="loading-subtitle">Platform Control Panel</div>
+      <div class="loading-spinner"></div>
+
+      <div class="security-badge">
+        <svg class="security-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2L3 7V12C3 17.55 6.84 22.54 12 23.5C17.16 22.54 21 17.55 21 12V7L12 2Z" fill="currentColor"/>
+        </svg>
+        RESTRICTED ACCESS - INTERNAL USE ONLY
+      </div>
+    </div>
+
+    <div id="root"></div>
+
+    <script>
+      // Remove loading screen after React loads
+      window.addEventListener('load', function() {
+        setTimeout(function() {
+          const loadingScreen = document.getElementById('loading-screen');
+          if (loadingScreen) {
+            loadingScreen.classList.add('fade-out');
+            setTimeout(function() {
+              loadingScreen.remove();
+            }, 300);
+          }
+        }, 500);
+      });
+
+      // Security: Prevent context menu in production
+      if (window.location.hostname !== 'localhost') {
+        document.addEventListener('contextmenu', function(e) {
+          e.preventDefault();
+        });
+      }
+
+      // Security: Clear sensitive data on unload
+      window.addEventListener('beforeunload', function() {
+        try {
+          sessionStorage.clear();
+        } catch (e) {
+          // Ignore errors
+        }
+      });
+    </script>
+  </body>
+</html>

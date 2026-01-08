@@ -1,0 +1,61 @@
+# PatLinks Super Admin - BLOCK ALL CRAWLERS
+# This is a restricted internal application and must NEVER be indexed
+
+User-agent: *
+Disallow: /
+
+# Block all common crawlers explicitly
+User-agent: Googlebot
+Disallow: /
+
+User-agent: Googlebot-Image
+Disallow: /
+
+User-agent: Googlebot-News
+Disallow: /
+
+User-agent: Bingbot
+Disallow: /
+
+User-agent: Slurp
+Disallow: /
+
+User-agent: DuckDuckBot
+Disallow: /
+
+User-agent: Baiduspider
+Disallow: /
+
+User-agent: YandexBot
+Disallow: /
+
+User-agent: Sogou
+Disallow: /
+
+User-agent: Exabot
+Disallow: /
+
+User-agent: facebot
+Disallow: /
+
+User-agent: ia_archiver
+Disallow: /
+
+User-agent: AhrefsBot
+Disallow: /
+
+User-agent: SemrushBot
+Disallow: /
+
+User-agent: MJ12bot
+Disallow: /
+
+User-agent: DotBot
+Disallow: /
+
+User-agent: BLEXBot
+Disallow: /
+
+# Security note: This file alone is not sufficient to prevent access.
+# Ensure proper authentication, IP whitelisting, and firewall rules are in place.
+# This application should be deployed behind VPN or with strict access controls.
