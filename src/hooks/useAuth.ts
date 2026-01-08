@@ -1,1 +1,1 @@
-export { useSuperAdminAuth as useAuth } from '../context/SuperAdminAuthContext';
+export { useAuth } from '../context/SuperAdminAuthContext';

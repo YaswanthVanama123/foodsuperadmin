@@ -3,9 +3,7 @@ export { default as apiClient } from './client';
 
 // Export API modules
 export { default as authApi } from './auth.api';
-export { authApi as authApiNew } from './auth';
 export { default as dashboardApi } from './dashboard.api';
-export { dashboardApi as dashboardApiNew } from './dashboard';
 export { default as restaurantsApi } from './restaurants.api';
 export { default as adminsApi } from './admins.api';
 export { default as subscriptionsApi } from './subscriptions.api';

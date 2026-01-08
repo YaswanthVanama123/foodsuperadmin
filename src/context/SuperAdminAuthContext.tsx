@@ -97,3 +97,6 @@ export const useSuperAdminAuth = (): SuperAdminAuthContextType => {
 
   return context;
 };
+
+// Export as useAuth for convenience
+export const useAuth = useSuperAdminAuth;

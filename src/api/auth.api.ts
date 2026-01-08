@@ -7,12 +7,7 @@ export interface LoginRequest {
 
 export interface LoginResponse {
   token: string;
-  superAdmin: {
-    id: string;
-    username: string;
-    email: string;
-    role: string;
-  };
+  superAdmin: SuperAdmin;
 }
 
 export interface SuperAdmin {

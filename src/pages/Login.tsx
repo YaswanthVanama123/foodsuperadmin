@@ -2,8 +2,7 @@ import React, { useState, FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Lock, User, Shield } from 'lucide-react';
 import { toast } from 'react-hot-toast';
-import { useAuth } from '../context/AuthContext';
-import { authApiNew } from '../api';
+import { useAuth } from '../context/SuperAdminAuthContext';
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
 
@@ -52,8 +51,7 @@ const Login: React.FC = () => {
     setIsLoading(true);
 
     try {
-      const response = await authApiNew.login(formData);
-      login(response.superAdmin, response.token);
+      await login(formData.username, formData.password);
       toast.success('Login successful! Welcome to the Super Admin Portal.');
       navigate('/dashboard');
     } catch (error: any) {

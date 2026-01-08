@@ -14,7 +14,7 @@ import {
   DollarSign,
   AlertCircle,
 } from 'lucide-react';
-import { Badge } from '../ui/Badge';
+import Badge from '../ui/Badge';
 
 interface RecentActivityTableProps {
   activities: RecentActivity[];

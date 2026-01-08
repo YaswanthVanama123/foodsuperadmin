@@ -9,7 +9,7 @@ import {
   Activity,
   Sparkles,
 } from 'lucide-react';
-import { dashboardApiNew } from '../api';
+import { dashboardApi } from '../api';
 import { PlatformStats, RecentActivity } from '../types';
 import { StatsGrid } from '../components/dashboard/StatsGrid';
 import { RecentActivityTable } from '../components/dashboard/RecentActivityTable';
@@ -42,8 +42,8 @@ const Dashboard: React.FC = () => {
 
       // Fetch stats and recent activity in parallel
       const [statsData, activityData] = await Promise.all([
-        dashboardApiNew.getStats(),
-        dashboardApiNew.getRecentActivity(10),
+        dashboardApi.getStats(),
+        dashboardApi.getRecentActivity(10),
       ]);
 
       setStats(statsData);
