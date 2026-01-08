@@ -27,40 +27,38 @@ export const usePlans = () => {
   const createPlan = useCallback(async (data: any) => {
     try {
       const newPlan = await plansApi.create(data);
-      setPlans((prev) => [newPlan, ...prev]);
+      await fetchPlans(); // Refresh the list to ensure consistency
       return { success: true, data: newPlan };
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to create plan';
       setError(message);
       return { success: false, error: message };
     }
-  }, []);
+  }, [fetchPlans]);
 
   const updatePlan = useCallback(async (id: string, data: any) => {
     try {
       const updatedPlan = await plansApi.update(id, data);
-      setPlans((prev) =>
-        prev.map((plan) => (plan.id === id ? updatedPlan : plan))
-      );
+      await fetchPlans(); // Refresh the list to ensure consistency
       return { success: true, data: updatedPlan };
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to update plan';
       setError(message);
       return { success: false, error: message };
     }
-  }, []);
+  }, [fetchPlans]);
 
   const deletePlan = useCallback(async (id: string) => {
     try {
       await plansApi.delete(id);
-      setPlans((prev) => prev.filter((plan) => plan.id !== id));
+      await fetchPlans(); // Refresh the list to ensure consistency
       return { success: true };
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to delete plan';
       setError(message);
       return { success: false, error: message };
     }
-  }, []);
+  }, [fetchPlans]);
 
   const getActivePlans = useCallback(() => {
     return plans.filter((plan) => plan.isActive);

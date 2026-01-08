@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import Modal, { ModalBody } from '../ui/Modal';
 import Badge from '../ui/Badge';
 import Card from '../ui/Card';
-import { Restaurant } from '../../types';
+import { Restaurant } from '../../api/restaurants.api';
 import { formatDate } from '../../utils/format';
 import { Building2, Mail, Phone, MapPin, Calendar, Users, TrendingUp, CreditCard } from 'lucide-react';
 
@@ -30,16 +30,11 @@ const RestaurantDetailsModal: React.FC<RestaurantDetailsModalProps> = ({
     { id: 'stats' as TabType, label: 'Statistics', icon: TrendingUp },
   ];
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'active':
-        return <Badge variant="success">Active</Badge>;
-      case 'suspended':
-        return <Badge variant="danger">Suspended</Badge>;
-      case 'pending':
-        return <Badge variant="warning">Pending</Badge>;
-      default:
-        return <Badge variant="gray">{status}</Badge>;
+  const getStatusBadge = (isActive: boolean) => {
+    if (isActive) {
+      return <Badge variant="success">Active</Badge>;
+    } else {
+      return <Badge variant="danger">Inactive</Badge>;
     }
   };
 
@@ -48,9 +43,9 @@ const RestaurantDetailsModal: React.FC<RestaurantDetailsModalProps> = ({
       <div className="flex items-start justify-between">
         <div>
           <h3 className="text-2xl font-bold text-gray-900">{restaurant.name}</h3>
-          <p className="text-sm text-gray-500 mt-1">@{restaurant.slug}</p>
+          <p className="text-sm text-gray-500 mt-1">@{restaurant.subdomain}</p>
         </div>
-        {getStatusBadge(restaurant.status)}
+        {getStatusBadge(restaurant.isActive)}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -67,7 +62,7 @@ const RestaurantDetailsModal: React.FC<RestaurantDetailsModalProps> = ({
             <Phone className="h-5 w-5 text-gray-400 mt-0.5" />
             <div>
               <p className="text-sm font-medium text-gray-500">Phone</p>
-              <p className="text-sm text-gray-900">{restaurant.phone}</p>
+              <p className="text-sm text-gray-900">{restaurant.phone || 'N/A'}</p>
             </div>
           </div>
 
@@ -75,7 +70,11 @@ const RestaurantDetailsModal: React.FC<RestaurantDetailsModalProps> = ({
             <MapPin className="h-5 w-5 text-gray-400 mt-0.5" />
             <div>
               <p className="text-sm font-medium text-gray-500">Address</p>
-              <p className="text-sm text-gray-900">{restaurant.address}</p>
+              <p className="text-sm text-gray-900">
+                {restaurant.address?.street && restaurant.address?.city
+                  ? `${restaurant.address.street}, ${restaurant.address.city}, ${restaurant.address.state} ${restaurant.address.zipCode}`
+                  : 'N/A'}
+              </p>
             </div>
           </div>
         </div>
@@ -99,12 +98,12 @@ const RestaurantDetailsModal: React.FC<RestaurantDetailsModalProps> = ({
             </div>
           )}
 
-          {restaurant.ownerId && (
+          {restaurant.createdBy && (
             <div className="flex items-start space-x-3">
               <Users className="h-5 w-5 text-gray-400 mt-0.5" />
               <div>
-                <p className="text-sm font-medium text-gray-500">Owner ID</p>
-                <p className="text-sm text-gray-900 font-mono">{restaurant.ownerId}</p>
+                <p className="text-sm font-medium text-gray-500">Created By</p>
+                <p className="text-sm text-gray-900 font-mono">{restaurant.createdBy}</p>
               </div>
             </div>
           )}
@@ -151,7 +150,7 @@ const RestaurantDetailsModal: React.FC<RestaurantDetailsModalProps> = ({
               <div className="p-4">
                 <p className="text-sm font-medium text-gray-500">Price</p>
                 <p className="text-2xl font-bold text-gray-900 mt-2">
-                  ${restaurant.subscription.price}
+                  ${restaurant.subscription.maxTables || 0}
                   <span className="text-sm font-normal text-gray-500">/mo</span>
                 </p>
               </div>

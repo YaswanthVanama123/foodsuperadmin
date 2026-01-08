@@ -21,8 +21,8 @@ const TicketDetailsModal: React.FC<TicketDetailsModalProps> = ({
   ticket,
   onUpdate,
 }) => {
-  const [status, setStatus] = useState(ticket?.status || 'open');
-  const [priority, setPriority] = useState(ticket?.priority || 'medium');
+  const [status, setStatus] = useState<'open' | 'in-progress' | 'resolved' | 'closed'>(ticket?.status || 'open');
+  const [priority, setPriority] = useState<'low' | 'medium' | 'high' | 'urgent'>(ticket?.priority || 'medium');
   const [reply, setReply] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
 
@@ -69,10 +69,9 @@ const TicketDetailsModal: React.FC<TicketDetailsModalProps> = ({
   const handleUpdate = async () => {
     setIsUpdating(true);
     try {
-      await onUpdate(ticket.id, {
-        status: status as UpdateTicketRequest['status'],
-        priority: priority as UpdateTicketRequest['priority'],
-        notes: reply || undefined,
+      await onUpdate(ticket._id, {
+        status,
+        priority,
       });
       onClose();
     } catch (error) {
@@ -168,7 +167,7 @@ const TicketDetailsModal: React.FC<TicketDetailsModalProps> = ({
               <Select
                 label="Status"
                 value={status}
-                onChange={(e) => setStatus(e.target.value)}
+                onChange={(e) => setStatus(e.target.value as typeof status)}
                 options={[
                   { value: 'open', label: 'Open' },
                   { value: 'in-progress', label: 'In Progress' },
@@ -180,7 +179,7 @@ const TicketDetailsModal: React.FC<TicketDetailsModalProps> = ({
               <Select
                 label="Priority"
                 value={priority}
-                onChange={(e) => setPriority(e.target.value)}
+                onChange={(e) => setPriority(e.target.value as typeof priority)}
                 options={[
                   { value: 'low', label: 'Low' },
                   { value: 'medium', label: 'Medium' },

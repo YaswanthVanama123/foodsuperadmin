@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import {
   Building2,
@@ -15,39 +16,45 @@ import { StatsGrid } from '../components/dashboard/StatsGrid';
 import { RecentActivityTable } from '../components/dashboard/RecentActivityTable';
 import { QuickActions } from '../components/dashboard/QuickActions';
 
+// Plan pricing for revenue calculation
+const PLAN_PRICING: Record<string, number> = {
+  'Starter': 29,
+  'Professional': 79,
+  'Enterprise': 199,
+  'starter': 29,
+  'professional': 79,
+  'enterprise': 199,
+  'basic': 29,
+  'pro': 79,
+};
+
 const Dashboard: React.FC = () => {
+  const navigate = useNavigate();
   const [stats, setStats] = useState<PlatformStats | null>(null);
   const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   // Fetch dashboard data
-  useEffect(() => {
-    fetchDashboardData();
-
-    // Refresh data every 30 seconds for real-time updates
-    const interval = setInterval(() => {
-      fetchDashboardData(true);
-    }, 30000);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  const fetchDashboardData = async (silent: boolean = false) => {
+  const fetchDashboardData = useCallback(async (silent: boolean = false) => {
     try {
       if (!silent) {
         setLoading(true);
         setError(null);
       }
 
-      // Fetch stats and recent activity in parallel
-      const [statsData, activityData] = await Promise.all([
-        dashboardApi.getStats(),
-        dashboardApi.getRecentActivity(10),
-      ]);
-
+      // Fetch stats
+      const statsData = await dashboardApi.getStats();
       setStats(statsData);
-      setRecentActivity(activityData);
+
+      // Try to fetch recent activity, but don't fail if it errors
+      try {
+        const activityData = await dashboardApi.getRecentActivity(10);
+        setRecentActivity(activityData.activities || []);
+      } catch (activityError) {
+        console.warn('Failed to fetch recent activity:', activityError);
+        setRecentActivity([]);
+      }
     } catch (err: any) {
       console.error('Error fetching dashboard data:', err);
       const errorMessage = err.response?.data?.message || 'Failed to load dashboard data';
@@ -61,7 +68,19 @@ const Dashboard: React.FC = () => {
         setLoading(false);
       }
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchDashboardData();
+
+    // Refresh data every 30 seconds for real-time updates
+    const interval = setInterval(() => {
+      fetchDashboardData(true);
+    }, 30000);
+
+    return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const formatCurrency = (amount: number): string => {
     return new Intl.NumberFormat('en-US', {
@@ -69,11 +88,40 @@ const Dashboard: React.FC = () => {
       currency: 'USD',
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
-    }).format(amount);
+    }).format(amount || 0);
   };
 
   const formatNumber = (num: number): string => {
-    return new Intl.NumberFormat('en-US').format(num);
+    return new Intl.NumberFormat('en-US').format(num || 0);
+  };
+
+  // Helper to get plan count
+  const getPlanCount = (planName: string): number => {
+    if (!stats?.subscriptions.byPlan) return 0;
+    return stats.subscriptions.byPlan[planName] ||
+           stats.subscriptions.byPlan[planName.toLowerCase()] ||
+           0;
+  };
+
+  // Helper to calculate revenue for a plan
+  const getPlanRevenue = (planName: string): number => {
+    const count = getPlanCount(planName);
+    const price = PLAN_PRICING[planName] || PLAN_PRICING[planName.toLowerCase()] || 0;
+    return count * price;
+  };
+
+  // Calculate total active subscriptions
+  const getActiveSubscriptions = (): number => {
+    if (!stats?.subscriptions.byStatus) return 0;
+    return stats.subscriptions.byStatus['active'] ||
+           stats.subscriptions.byStatus['Active'] ||
+           0;
+  };
+
+  // Calculate total subscriptions
+  const getTotalSubscriptions = (): number => {
+    if (!stats?.subscriptions.byStatus) return 0;
+    return Object.values(stats.subscriptions.byStatus).reduce((sum, count) => sum + count, 0);
   };
 
   if (loading) {
@@ -114,47 +162,39 @@ const Dashboard: React.FC = () => {
   const mainStats = stats ? [
     {
       title: 'Total Restaurants',
-      value: formatNumber(stats.totalRestaurants),
+      value: formatNumber(stats.restaurants.total),
       icon: Building2,
       color: '#8b5cf6',
-      trend: stats.totalRestaurants > 0 ? {
+      trend: stats.restaurants.total > 0 ? {
         value: 12.5,
         isPositive: true,
       } : undefined,
-      subtitle: `${formatNumber(stats.activeRestaurants)} active`,
+      subtitle: `${formatNumber(stats.restaurants.active)} active`,
     },
     {
       title: 'Active Subscriptions',
-      value: formatNumber(stats.activeSubscriptions),
+      value: formatNumber(getActiveSubscriptions()),
       icon: CreditCard,
       color: '#10b981',
-      trend: stats.activeSubscriptions > 0 ? {
+      trend: getActiveSubscriptions() > 0 ? {
         value: 8.3,
         isPositive: true,
       } : undefined,
-      subtitle: `of ${formatNumber(stats.totalSubscriptions)} total`,
+      subtitle: `of ${formatNumber(getTotalSubscriptions())} total`,
     },
     {
       title: 'Total Revenue',
-      value: formatCurrency(stats.totalRevenue),
+      value: formatCurrency(stats.revenue.totalRevenue),
       icon: DollarSign,
       color: '#f59e0b',
-      trend: stats.revenueGrowth ? {
-        value: stats.revenueGrowth,
-        isPositive: stats.revenueGrowth > 0,
-      } : undefined,
-      subtitle: `${formatCurrency(stats.monthlyRevenue)} this month`,
+      subtitle: `${formatCurrency(stats.revenue.totalMonthlyRecurring)} monthly recurring`,
     },
     {
       title: 'Active Users',
-      value: formatNumber(stats.activeUsers),
+      value: formatNumber(stats.users.activeCustomers),
       icon: Users,
       color: '#3b82f6',
-      trend: stats.userGrowth ? {
-        value: stats.userGrowth,
-        isPositive: stats.userGrowth > 0,
-      } : undefined,
-      subtitle: `${formatNumber(stats.totalUsers)} total users`,
+      subtitle: `${formatNumber(stats.users.totalCustomers)} total customers`,
     },
   ] : [];
 
@@ -192,10 +232,10 @@ const Dashboard: React.FC = () => {
                 </div>
               </div>
               <p className="text-3xl font-bold text-gray-900 mb-2">
-                {formatNumber(stats.subscriptionsByPlan.starter)}
+                {formatNumber(getPlanCount('Starter'))}
               </p>
               <p className="text-sm text-gray-600">
-                Revenue: {formatCurrency(stats.revenueByPlan.starter)}
+                Revenue: {formatCurrency(getPlanRevenue('Starter'))}
               </p>
             </div>
 
@@ -207,10 +247,10 @@ const Dashboard: React.FC = () => {
                 </div>
               </div>
               <p className="text-3xl font-bold text-gray-900 mb-2">
-                {formatNumber(stats.subscriptionsByPlan.professional)}
+                {formatNumber(getPlanCount('Professional'))}
               </p>
               <p className="text-sm text-gray-600">
-                Revenue: {formatCurrency(stats.revenueByPlan.professional)}
+                Revenue: {formatCurrency(getPlanRevenue('Professional'))}
               </p>
             </div>
 
@@ -222,10 +262,10 @@ const Dashboard: React.FC = () => {
                 </div>
               </div>
               <p className="text-3xl font-bold text-gray-900 mb-2">
-                {formatNumber(stats.subscriptionsByPlan.enterprise)}
+                {formatNumber(getPlanCount('Enterprise'))}
               </p>
               <p className="text-sm text-gray-600">
-                Revenue: {formatCurrency(stats.revenueByPlan.enterprise)}
+                Revenue: {formatCurrency(getPlanRevenue('Enterprise'))}
               </p>
             </div>
           </div>
@@ -236,32 +276,28 @@ const Dashboard: React.FC = () => {
           <QuickActions />
         </div>
 
-        {/* Recent Activity Table */}
-        <div className="mb-8">
-          <RecentActivityTable activities={recentActivity} loading={false} />
-        </div>
+        {/* Recent Activity */}
+        {recentActivity.length > 0 && (
+          <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">Recent Activity</h2>
+            <RecentActivityTable activities={recentActivity} />
+          </div>
+        )}
 
-        {/* Footer Stats */}
-        {stats && (
-          <div className="bg-gradient-to-r from-violet-600 to-purple-600 rounded-xl shadow-2xl p-6 text-white">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="text-center">
-                <p className="text-violet-200 text-sm mb-2">Today's Orders</p>
-                <p className="text-4xl font-bold">{formatNumber(stats.todayOrders)}</p>
-              </div>
-              <div className="text-center border-l border-r border-violet-400">
-                <p className="text-violet-200 text-sm mb-2">Total Orders (All Time)</p>
-                <p className="text-4xl font-bold">{formatNumber(stats.totalOrders)}</p>
-              </div>
-              <div className="text-center">
-                <p className="text-violet-200 text-sm mb-2">Average Revenue per Restaurant</p>
-                <p className="text-4xl font-bold">
-                  {stats.totalRestaurants > 0
-                    ? formatCurrency(stats.totalRevenue / stats.totalRestaurants)
-                    : '$0'}
-                </p>
-              </div>
-            </div>
+        {/* Empty State */}
+        {stats && stats.restaurants.total === 0 && (
+          <div className="bg-white rounded-xl shadow-lg p-12 border border-gray-100 text-center">
+            <Building2 className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">No Restaurants Yet</h3>
+            <p className="text-gray-600 mb-6">
+              Get started by creating your first restaurant on the platform.
+            </p>
+            <button
+              onClick={() => navigate('/restaurants')}
+              className="px-6 py-3 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-lg font-semibold hover:from-violet-700 hover:to-purple-700 transition-all shadow-lg"
+            >
+              Create Restaurant
+            </button>
           </div>
         )}
       </div>

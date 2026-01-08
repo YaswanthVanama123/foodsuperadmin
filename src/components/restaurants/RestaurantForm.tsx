@@ -2,9 +2,8 @@ import React, { useState, useEffect } from 'react';
 import Modal, { ModalBody, ModalFooter } from '../ui/Modal';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
-import TextArea from '../ui/TextArea';
 import Select from '../ui/Select';
-import { Restaurant } from '../../types';
+import { Restaurant } from '../../api/restaurants.api';
 
 interface RestaurantFormProps {
   isOpen: boolean;
@@ -15,13 +14,22 @@ interface RestaurantFormProps {
 
 export interface RestaurantFormData {
   name: string;
-  slug: string;
+  subdomain: string;
   email: string;
   phone: string;
-  address: string;
-  ownerId?: string;
+  address: {
+    street: string;
+    city: string;
+    state: string;
+    zipCode: string;
+    country: string;
+  };
   subscription?: {
-    plan: 'starter' | 'professional' | 'enterprise';
+    plan: string;
+    status: string;
+    startDate: string;
+    endDate: string;
+    billingCycle: string;
   };
 }
 
@@ -33,13 +41,22 @@ const RestaurantForm: React.FC<RestaurantFormProps> = ({
 }) => {
   const [formData, setFormData] = useState<RestaurantFormData>({
     name: '',
-    slug: '',
+    subdomain: '',
     email: '',
     phone: '',
-    address: '',
-    ownerId: '',
+    address: {
+      street: '',
+      city: '',
+      state: '',
+      zipCode: '',
+      country: 'US',
+    },
     subscription: {
-      plan: 'starter',
+      plan: 'trial',
+      status: 'active',
+      startDate: new Date().toISOString(),
+      endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days from now
+      billingCycle: 'monthly',
     },
   });
 
@@ -50,30 +67,50 @@ const RestaurantForm: React.FC<RestaurantFormProps> = ({
     if (restaurant) {
       setFormData({
         name: restaurant.name || '',
-        slug: restaurant.slug || '',
+        subdomain: restaurant.subdomain || '',
         email: restaurant.email || '',
         phone: restaurant.phone || '',
-        address: restaurant.address || '',
-        ownerId: restaurant.ownerId || '',
-        subscription: restaurant.subscription || { plan: 'starter' },
+        address: restaurant.address || {
+          street: '',
+          city: '',
+          state: '',
+          zipCode: '',
+          country: 'US',
+        },
+        subscription: restaurant.subscription || {
+          plan: 'trial',
+          status: 'active',
+          startDate: new Date().toISOString(),
+          endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+          billingCycle: 'monthly',
+        },
       });
     } else {
       setFormData({
         name: '',
-        slug: '',
+        subdomain: '',
         email: '',
         phone: '',
-        address: '',
-        ownerId: '',
+        address: {
+          street: '',
+          city: '',
+          state: '',
+          zipCode: '',
+          country: 'US',
+        },
         subscription: {
-          plan: 'starter',
+          plan: 'trial',
+          status: 'active',
+          startDate: new Date().toISOString(),
+          endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+          billingCycle: 'monthly',
         },
       });
     }
     setErrors({});
   }, [restaurant, isOpen]);
 
-  const generateSlug = (name: string): string => {
+  const generateSubdomain = (name: string): string => {
     return name
       .toLowerCase()
       .trim()
@@ -86,7 +123,7 @@ const RestaurantForm: React.FC<RestaurantFormProps> = ({
     setFormData((prev) => ({
       ...prev,
       name: value,
-      slug: generateSlug(value),
+      subdomain: generateSubdomain(value),
     }));
   };
 
@@ -97,8 +134,8 @@ const RestaurantForm: React.FC<RestaurantFormProps> = ({
       newErrors.name = 'Restaurant name is required';
     }
 
-    if (!formData.slug.trim()) {
-      newErrors.slug = 'Slug is required';
+    if (!formData.subdomain.trim()) {
+      newErrors.subdomain = 'Subdomain is required';
     }
 
     if (!formData.email.trim()) {
@@ -109,10 +146,6 @@ const RestaurantForm: React.FC<RestaurantFormProps> = ({
 
     if (!formData.phone.trim()) {
       newErrors.phone = 'Phone number is required';
-    }
-
-    if (!formData.address.trim()) {
-      newErrors.address = 'Address is required';
     }
 
     setErrors(newErrors);
@@ -138,10 +171,26 @@ const RestaurantForm: React.FC<RestaurantFormProps> = ({
   };
 
   const subscriptionPlans = [
-    { value: 'starter', label: 'Starter' },
-    { value: 'professional', label: 'Professional' },
+    { value: 'trial', label: 'Trial' },
+    { value: 'basic', label: 'Basic (Starter)' },
+    { value: 'pro', label: 'Professional' },
     { value: 'enterprise', label: 'Enterprise' },
   ];
+
+  const handlePlanChange = (plan: string) => {
+    // Calculate end date based on plan (trial = 14 days, others = 30 days)
+    const daysToAdd = plan === 'trial' ? 14 : 30;
+    const endDate = new Date(Date.now() + daysToAdd * 24 * 60 * 60 * 1000).toISOString();
+
+    setFormData({
+      ...formData,
+      subscription: {
+        ...formData.subscription!,
+        plan,
+        endDate,
+      },
+    });
+  };
 
   return (
     <Modal
@@ -163,12 +212,12 @@ const RestaurantForm: React.FC<RestaurantFormProps> = ({
             />
 
             <Input
-              label="Slug (URL)"
+              label="Subdomain"
               placeholder="the-gourmet-kitchen"
-              value={formData.slug}
-              onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
-              error={errors.slug}
-              helperText="Used in the restaurant's unique URL"
+              value={formData.subdomain}
+              onChange={(e) => setFormData({ ...formData, subdomain: e.target.value })}
+              error={errors.subdomain}
+              helperText="Used for the restaurant's unique subdomain (e.g., the-gourmet-kitchen.patlinks.com)"
               required
             />
 
@@ -194,37 +243,73 @@ const RestaurantForm: React.FC<RestaurantFormProps> = ({
               />
             </div>
 
-            <TextArea
-              label="Address"
-              placeholder="123 Main St, City, State, ZIP"
-              value={formData.address}
-              onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-              error={errors.address}
-              rows={3}
-              required
-            />
-
-            {!restaurant && (
+            <div className="space-y-4 p-4 bg-gray-50 rounded-lg">
+              <h4 className="text-sm font-medium text-gray-700">Address</h4>
               <Input
-                label="Owner ID (Optional)"
-                placeholder="Owner user ID"
-                value={formData.ownerId}
-                onChange={(e) => setFormData({ ...formData, ownerId: e.target.value })}
-                helperText="Leave empty to create without owner"
+                label="Street"
+                placeholder="123 Main St"
+                value={formData.address.street}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    address: { ...formData.address, street: e.target.value },
+                  })
+                }
               />
-            )}
+              <div className="grid grid-cols-2 gap-4">
+                <Input
+                  label="City"
+                  placeholder="City"
+                  value={formData.address.city}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      address: { ...formData.address, city: e.target.value },
+                    })
+                  }
+                />
+                <Input
+                  label="State"
+                  placeholder="State"
+                  value={formData.address.state}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      address: { ...formData.address, state: e.target.value },
+                    })
+                  }
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <Input
+                  label="ZIP Code"
+                  placeholder="12345"
+                  value={formData.address.zipCode}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      address: { ...formData.address, zipCode: e.target.value },
+                    })
+                  }
+                />
+                <Input
+                  label="Country"
+                  placeholder="US"
+                  value={formData.address.country}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      address: { ...formData.address, country: e.target.value },
+                    })
+                  }
+                />
+              </div>
+            </div>
 
             <Select
               label="Subscription Plan"
-              value={formData.subscription?.plan || 'starter'}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  subscription: {
-                    plan: e.target.value as 'starter' | 'professional' | 'enterprise',
-                  },
-                })
-              }
+              value={formData.subscription?.plan || 'trial'}
+              onChange={(e) => handlePlanChange(e.target.value)}
               options={subscriptionPlans}
             />
           </div>

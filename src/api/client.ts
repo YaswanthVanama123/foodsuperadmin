@@ -33,8 +33,9 @@ apiClient.interceptors.response.use(
   },
   (error: AxiosError) => {
     if (error.response?.status === 401) {
-      // Clear token and redirect to login
+      // Clear all auth data and redirect to login
       localStorage.removeItem('superadmin_token');
+      localStorage.removeItem('superadmin_data');
       window.location.href = '/login';
     }
 

@@ -51,37 +51,41 @@ export interface PlatformStats {
   growthRate: number;
 }
 
+interface ApiResponse<T> {
+  data: T;
+}
+
 const analyticsApi = {
   getPlatformRevenue: async (startDate: string, endDate: string): Promise<PlatformRevenueResponse> => {
     const params = new URLSearchParams();
     params.append('startDate', startDate);
     params.append('endDate', endDate);
 
-    const response = await apiClient.get<PlatformRevenueResponse>(
+    const response = await apiClient.get<ApiResponse<PlatformRevenueResponse>>(
       `/api/superadmin/analytics/revenue?${params.toString()}`
     );
-    return response.data;
+    return response.data.data;
   },
 
   getRestaurantGrowth: async (): Promise<RestaurantGrowthResponse> => {
-    const response = await apiClient.get<RestaurantGrowthResponse>(
+    const response = await apiClient.get<ApiResponse<RestaurantGrowthResponse>>(
       '/api/superadmin/analytics/growth'
     );
-    return response.data;
+    return response.data.data;
   },
 
   getTopRestaurants: async (): Promise<TopRestaurantsResponse> => {
-    const response = await apiClient.get<TopRestaurantsResponse>(
+    const response = await apiClient.get<ApiResponse<TopRestaurantsResponse>>(
       '/api/superadmin/analytics/top-restaurants'
     );
-    return response.data;
+    return response.data.data;
   },
 
   getPlatformStats: async (): Promise<PlatformStats> => {
-    const response = await apiClient.get<PlatformStats>(
+    const response = await apiClient.get<ApiResponse<PlatformStats>>(
       '/api/superadmin/analytics/stats'
     );
-    return response.data;
+    return response.data.data;
   },
 };
 

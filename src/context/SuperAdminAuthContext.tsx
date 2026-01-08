@@ -21,17 +21,20 @@ export const SuperAdminAuthProvider: React.FC<SuperAdminAuthProviderProps> = ({ 
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Auto-check auth on mount
-    const checkAuth = async () => {
+    // Optimistic auth check - just check if token exists
+    // If token is invalid, API calls will return 401 and interceptor will handle logout
+    const checkAuth = () => {
       const token = localStorage.getItem('superadmin_token');
+      const cachedAdmin = localStorage.getItem('superadmin_data');
 
-      if (token) {
+      if (token && cachedAdmin) {
         try {
-          const admin = await authApi.getCurrentSuperAdmin();
-          setSuperAdmin(admin);
+          // Use cached admin data to avoid unnecessary API call
+          setSuperAdmin(JSON.parse(cachedAdmin));
         } catch (error) {
-          console.error('Failed to fetch current super admin:', error);
+          console.error('Failed to parse cached admin data:', error);
           localStorage.removeItem('superadmin_token');
+          localStorage.removeItem('superadmin_data');
         }
       }
 
@@ -45,6 +48,7 @@ export const SuperAdminAuthProvider: React.FC<SuperAdminAuthProviderProps> = ({ 
     try {
       const response = await authApi.login(username, password);
       localStorage.setItem('superadmin_token', response.token);
+      localStorage.setItem('superadmin_data', JSON.stringify(response.superAdmin));
       setSuperAdmin(response.superAdmin as SuperAdmin);
     } catch (error) {
       console.error('Login failed:', error);
@@ -54,6 +58,7 @@ export const SuperAdminAuthProvider: React.FC<SuperAdminAuthProviderProps> = ({ 
 
   const logout = () => {
     localStorage.removeItem('superadmin_token');
+    localStorage.removeItem('superadmin_data');
     setSuperAdmin(null);
 
     // Optional: Call logout API endpoint
@@ -65,6 +70,7 @@ export const SuperAdminAuthProvider: React.FC<SuperAdminAuthProviderProps> = ({ 
   const refreshSuperAdmin = async () => {
     try {
       const admin = await authApi.getCurrentSuperAdmin();
+      localStorage.setItem('superadmin_data', JSON.stringify(admin));
       setSuperAdmin(admin);
     } catch (error) {
       console.error('Failed to refresh super admin:', error);

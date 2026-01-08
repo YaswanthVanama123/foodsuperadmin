@@ -21,7 +21,6 @@ export type {
 
 // Export types from dashboard.api
 export type {
-  DashboardStats,
   ActivityItem,
   RecentActivity,
 } from './dashboard.api';
@@ -33,6 +32,10 @@ export type {
   CreateRestaurantRequest,
   UpdateRestaurantRequest,
   UpdateStatusRequest,
+  Address,
+  Branding,
+  Settings,
+  Subscription as RestaurantSubscription,
 } from './restaurants.api';
 
 // Export types from admins.api
@@ -62,6 +65,7 @@ export type {
 
 // Export types from analytics.api
 export type {
+  PlatformStats,
   RevenueDataPoint,
   PlatformRevenueResponse,
   GrowthDataPoint,

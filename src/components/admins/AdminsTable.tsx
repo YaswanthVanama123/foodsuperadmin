@@ -2,7 +2,6 @@ import React from 'react';
 import { Edit, Trash2, KeyRound, Eye } from 'lucide-react';
 import DataTable, { Column } from '../common/DataTable';
 import Badge from '../ui/Badge';
-import Button from '../ui/Button';
 import { Admin } from '../../api/admins.api';
 
 interface AdminsTableProps {
@@ -55,7 +54,7 @@ const AdminsTable: React.FC<AdminsTableProps> = ({
       sortable: true,
       render: (admin) => (
         <div className="text-gray-900">
-          {admin.restaurantName || 'N/A'}
+          {typeof admin.restaurantId === 'string' ? admin.restaurantId : admin.restaurantId.name}
         </div>
       ),
     },
@@ -75,10 +74,10 @@ const AdminsTable: React.FC<AdminsTableProps> = ({
       sortable: true,
       render: (admin) => (
         <Badge
-          variant={admin.status === 'active' ? 'success' : 'gray'}
+          variant={admin.isActive ? 'success' : 'gray'}
           size="sm"
         >
-          {admin.status}
+          {admin.isActive ? 'active' : 'inactive'}
         </Badge>
       ),
     },
@@ -148,7 +147,7 @@ const AdminsTable: React.FC<AdminsTableProps> = ({
       columns={columns}
       isLoading={isLoading}
       emptyMessage="No admins found"
-      rowKey="id"
+      rowKey="_id"
     />
   );
 };

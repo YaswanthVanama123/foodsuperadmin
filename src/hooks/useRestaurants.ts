@@ -36,11 +36,11 @@ export const useRestaurants = (): UseRestaurantsReturn => {
     setLastFetchParams({ page, limit, search });
 
     try {
-      const response = await restaurantsApi.getAll(page, limit, search);
+      const response = await restaurantsApi.getAll({ page, limit, search });
       setRestaurants(response.restaurants);
-      setTotalPages(response.totalPages);
-      setCurrentPage(response.page);
-      setTotal(response.total);
+      setTotalPages(response.pagination.pages);
+      setCurrentPage(response.pagination.page);
+      setTotal(response.pagination.total);
     } catch (err: any) {
       const errorMessage = err.response?.data?.message || 'Failed to fetch restaurants';
       setError(errorMessage);
@@ -104,6 +104,7 @@ export const useRestaurants = (): UseRestaurantsReturn => {
 
   useEffect(() => {
     fetchRestaurants();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return {

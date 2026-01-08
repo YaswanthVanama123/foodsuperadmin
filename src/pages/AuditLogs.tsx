@@ -45,11 +45,11 @@ const AuditLogs: React.FC = () => {
   useEffect(() => {
     const fetchAdmins = async () => {
       try {
-        const response = await adminsApi.getAdmins(1, 100);
+        const response = await adminsApi.getAll({ limit: 100 });
         setAdmins(
           response.admins.map((admin) => ({
-            id: admin.id,
-            name: admin.name,
+            id: admin._id,
+            name: `${admin.firstName || ''} ${admin.lastName || ''}`.trim() || admin.username,
           }))
         );
       } catch (err) {

@@ -21,7 +21,6 @@ const Analytics: React.FC = () => {
   const [isLoadingRevenue, setIsLoadingRevenue] = useState(true);
   const [isLoadingGrowth, setIsLoadingGrowth] = useState(true);
   const [isLoadingTopRestaurants, setIsLoadingTopRestaurants] = useState(true);
-  const [isLoadingStats, setIsLoadingStats] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const [revenueData, setRevenueData] = useState<PlatformRevenueResponse | null>(
@@ -77,13 +76,10 @@ const Analytics: React.FC = () => {
 
   const fetchStats = async () => {
     try {
-      setIsLoadingStats(true);
       const data = await dashboardApi.getStats();
       setStats(data);
     } catch (err) {
       console.error('Error fetching stats:', err);
-    } finally {
-      setIsLoadingStats(false);
     }
   };
 

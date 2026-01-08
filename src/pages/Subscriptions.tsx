@@ -26,7 +26,6 @@ const Subscriptions: React.FC = () => {
   const { plans } = usePlans();
 
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
-  const [isLoadingRestaurants, setIsLoadingRestaurants] = useState(true);
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
@@ -40,13 +39,10 @@ const Subscriptions: React.FC = () => {
   useEffect(() => {
     const fetchRestaurants = async () => {
       try {
-        setIsLoadingRestaurants(true);
-        const response = await restaurantsApi.getAll(1, 100);
+        const response = await restaurantsApi.getAll({ page: 1, limit: 100 });
         setRestaurants(response.restaurants);
       } catch (err) {
         console.error('Failed to fetch restaurants:', err);
-      } finally {
-        setIsLoadingRestaurants(false);
       }
     };
 

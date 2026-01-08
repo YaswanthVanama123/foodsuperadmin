@@ -125,7 +125,7 @@ const TicketsTable: React.FC<TicketsTableProps> = ({
       columns={columns}
       isLoading={isLoading}
       emptyMessage="No tickets found"
-      rowKey="id"
+      rowKey="_id"
       onRowClick={onView}
     />
   );

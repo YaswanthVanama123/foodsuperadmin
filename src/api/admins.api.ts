@@ -1,42 +1,52 @@
 import apiClient from './client';
 
 export interface Admin {
-  id: string;
+  _id: string;
   username: string;
   email: string;
-  firstName: string;
-  lastName: string;
-  restaurantId: string;
-  restaurantName?: string;
-  role: string;
-  status: 'active' | 'inactive';
+  firstName?: string;
+  lastName?: string;
+  restaurantId: {
+    _id: string;
+    name: string;
+    subdomain: string;
+  } | string;
+  role: 'admin' | 'manager' | 'staff';
+  permissions?: string[];
+  isActive: boolean;
   createdAt: string;
   updatedAt: string;
 }
 
 export interface AdminsResponse {
   admins: Admin[];
-  total: number;
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+    pages: number;
+  };
 }
 
 export interface CreateAdminRequest {
   username: string;
   email: string;
   password: string;
-  firstName: string;
-  lastName: string;
+  firstName?: string;
+  lastName?: string;
   restaurantId: string;
-  role: string;
+  role?: 'admin' | 'manager' | 'staff';
+  permissions?: string[];
 }
 
 export interface UpdateAdminRequest {
   username?: string;
   email?: string;
-  password?: string;
   firstName?: string;
   lastName?: string;
-  role?: string;
-  status?: 'active' | 'inactive';
+  role?: 'admin' | 'manager' | 'staff';
+  permissions?: string[];
+  isActive?: boolean;
 }
 
 export interface ResetPasswordRequest {
@@ -53,42 +63,77 @@ export interface ActivityLog {
 }
 
 const adminsApi = {
-  getAll: async (restaurantId?: string): Promise<AdminsResponse> => {
-    const params = new URLSearchParams();
-    if (restaurantId) params.append('restaurantId', restaurantId);
+  getAll: async (params?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    restaurantId?: string;
+    role?: string;
+    status?: string;
+  }): Promise<AdminsResponse> => {
+    const queryParams = new URLSearchParams();
+    if (params?.page) queryParams.append('page', params.page.toString());
+    if (params?.limit) queryParams.append('limit', params.limit.toString());
+    if (params?.search) queryParams.append('search', params.search);
+    if (params?.restaurantId) queryParams.append('restaurantId', params.restaurantId);
+    if (params?.role) queryParams.append('role', params.role);
+    if (params?.status) queryParams.append('status', params.status);
 
-    const response = await apiClient.get<AdminsResponse>(
-      `/api/superadmin/admins?${params.toString()}`
+    const response = await apiClient.get<{ success: boolean; data: AdminsResponse }>(
+      `/api/super-admin/admins?${queryParams.toString()}`
     );
-    return response.data;
+    return response.data.data;
   },
 
   getById: async (id: string): Promise<Admin> => {
-    const response = await apiClient.get<Admin>(`/api/superadmin/admins/${id}`);
-    return response.data;
+    const response = await apiClient.get<{ success: boolean; data: Admin }>(
+      `/api/super-admin/admins/${id}`
+    );
+    return response.data.data;
   },
 
   create: async (data: CreateAdminRequest): Promise<Admin> => {
-    const response = await apiClient.post<Admin>('/api/superadmin/admins', data);
-    return response.data;
+    const response = await apiClient.post<{ success: boolean; data: Admin; message: string }>(
+      '/api/super-admin/admins',
+      data
+    );
+    return response.data.data;
   },
 
   update: async (id: string, data: UpdateAdminRequest): Promise<Admin> => {
-    const response = await apiClient.put<Admin>(`/api/superadmin/admins/${id}`, data);
-    return response.data;
+    const response = await apiClient.put<{ success: boolean; data: Admin; message: string }>(
+      `/api/super-admin/admins/${id}`,
+      data
+    );
+    return response.data.data;
   },
 
   delete: async (id: string): Promise<void> => {
-    await apiClient.delete(`/api/superadmin/admins/${id}`);
+    await apiClient.delete<{ success: boolean; message: string }>(
+      `/api/super-admin/admins/${id}`
+    );
+  },
+
+  toggleStatus: async (id: string, isActive: boolean): Promise<Admin> => {
+    const response = await apiClient.patch<{ success: boolean; data: Admin; message: string }>(
+      `/api/super-admin/admins/${id}/status`,
+      { isActive }
+    );
+    return response.data.data;
   },
 
   resetPassword: async (id: string, newPassword: string): Promise<void> => {
-    await apiClient.post(`/api/superadmin/admins/${id}/reset-password`, { newPassword });
+    await apiClient.post<{ success: boolean; message: string }>(
+      `/api/super-admin/admins/${id}/reset-password`,
+      { newPassword }
+    );
   },
 
+  // Note: getActivity endpoint not implemented in backend yet
   getActivity: async (id: string): Promise<ActivityLog[]> => {
-    const response = await apiClient.get<ActivityLog[]>(`/api/superadmin/admins/${id}/activity`);
-    return response.data;
+    // This endpoint doesn't exist in backend - return empty array for now
+    console.warn(`Admin activity endpoint not implemented yet for admin ${id}`);
+    return [];
   },
 };
 

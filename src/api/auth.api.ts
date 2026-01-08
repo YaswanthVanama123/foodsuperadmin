@@ -11,30 +11,35 @@ export interface LoginResponse {
 }
 
 export interface SuperAdmin {
-  id: string;
+  _id: string;
   username: string;
   email: string;
-  role: string;
-  createdAt: string;
-  updatedAt: string;
+  firstName?: string;
+  lastName?: string;
+  role?: string;
+  permissions?: string[];
+  isActive?: boolean;
+  lastLoginAt?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 const authApi = {
   login: async (username: string, password: string): Promise<LoginResponse> => {
-    const response = await apiClient.post<LoginResponse>('/api/superadmin/auth/login', {
+    const response = await apiClient.post<{ success: boolean; data: LoginResponse }>('/api/super-admin/auth/login', {
       username,
       password,
     });
-    return response.data;
+    return response.data.data;
   },
 
   logout: async (): Promise<void> => {
-    await apiClient.post('/api/superadmin/auth/logout');
+    await apiClient.post('/api/super-admin/auth/logout');
   },
 
   getCurrentSuperAdmin: async (): Promise<SuperAdmin> => {
-    const response = await apiClient.get<SuperAdmin>('/api/superadmin/auth/me');
-    return response.data;
+    const response = await apiClient.get<{ success: boolean; data: SuperAdmin }>('/api/super-admin/auth/me');
+    return response.data.data;
   },
 };
 

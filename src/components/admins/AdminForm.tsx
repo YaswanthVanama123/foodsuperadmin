@@ -29,8 +29,8 @@ const AdminForm: React.FC<AdminFormProps> = ({
     firstName: '',
     lastName: '',
     restaurantId: '',
-    role: 'admin',
-    status: 'active' as 'active' | 'inactive',
+    role: 'admin' as 'admin' | 'manager' | 'staff',
+    isActive: true,
   });
 
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
@@ -52,11 +52,11 @@ const AdminForm: React.FC<AdminFormProps> = ({
         username: admin.username,
         email: admin.email,
         password: '',
-        firstName: admin.firstName,
-        lastName: admin.lastName,
-        restaurantId: admin.restaurantId,
+        firstName: admin.firstName || '',
+        lastName: admin.lastName || '',
+        restaurantId: typeof admin.restaurantId === 'string' ? admin.restaurantId : admin.restaurantId._id,
         role: admin.role,
-        status: admin.status,
+        isActive: admin.isActive,
       });
     } else {
       // Reset form for create mode
@@ -68,7 +68,7 @@ const AdminForm: React.FC<AdminFormProps> = ({
         lastName: '',
         restaurantId: '',
         role: 'admin',
-        status: 'active',
+        isActive: true,
       });
     }
     setErrors({});
@@ -77,7 +77,7 @@ const AdminForm: React.FC<AdminFormProps> = ({
   const loadRestaurants = async () => {
     try {
       setLoadingRestaurants(true);
-      const response = await restaurantsApi.getAll(1, 100);
+      const response = await restaurantsApi.getAll({ page: 1, limit: 100 });
       setRestaurants(response.restaurants);
     } catch (error) {
       console.error('Error loading restaurants:', error);
@@ -90,7 +90,9 @@ const AdminForm: React.FC<AdminFormProps> = ({
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    // Convert string 'true'/'false' to boolean for isActive field
+    const processedValue = name === 'isActive' ? value === 'true' : value;
+    setFormData((prev) => ({ ...prev, [name]: processedValue }));
     // Clear error for this field
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: '' }));
@@ -160,13 +162,9 @@ const AdminForm: React.FC<AdminFormProps> = ({
           firstName: formData.firstName,
           lastName: formData.lastName,
           role: formData.role,
-          status: formData.status,
+          isActive: formData.isActive,
         };
-        // Only include password if it's not empty
-        if (formData.password) {
-          updateData.password = formData.password;
-        }
-        await adminsApi.update(admin.id, updateData);
+        await adminsApi.update(admin._id, updateData);
       }
 
       onSuccess();
@@ -182,18 +180,19 @@ const AdminForm: React.FC<AdminFormProps> = ({
   };
 
   const restaurantOptions = restaurants.map((restaurant) => ({
-    value: restaurant.id,
+    value: restaurant._id,
     label: restaurant.name,
   }));
 
   const roleOptions = [
     { value: 'admin', label: 'Admin' },
     { value: 'manager', label: 'Manager' },
+    { value: 'staff', label: 'Staff' },
   ];
 
   const statusOptions = [
-    { value: 'active', label: 'Active' },
-    { value: 'inactive', label: 'Inactive' },
+    { value: 'true', label: 'Active' },
+    { value: 'false', label: 'Inactive' },
   ];
 
   return (
@@ -292,8 +291,8 @@ const AdminForm: React.FC<AdminFormProps> = ({
               {mode === 'edit' && (
                 <Select
                   label="Status"
-                  name="status"
-                  value={formData.status}
+                  name="isActive"
+                  value={String(formData.isActive)}
                   onChange={handleChange}
                   options={statusOptions}
                   required

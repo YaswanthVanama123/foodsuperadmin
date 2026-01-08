@@ -23,14 +23,14 @@ interface PlatformMetricsCardsProps {
 }
 
 const PlatformMetricsCards: React.FC<PlatformMetricsCardsProps> = ({
-  totalRevenue,
-  avgRevenuePerRestaurant,
-  totalOrders,
-  activeUsers,
-  revenueGrowth,
-  avgRevenueGrowth,
-  ordersGrowth,
-  usersGrowth,
+  totalRevenue = 0,
+  avgRevenuePerRestaurant = 0,
+  totalOrders = 0,
+  activeUsers = 0,
+  revenueGrowth = 0,
+  avgRevenueGrowth = 0,
+  ordersGrowth = 0,
+  usersGrowth = 0,
 }) => {
   const formatCurrency = (amount: number): string => {
     return new Intl.NumberFormat('en-US', {
@@ -101,11 +101,11 @@ const PlatformMetricsCards: React.FC<PlatformMetricsCardsProps> = ({
                   />
                   <span
                     className={`text-sm font-semibold ${
-                      metric.change >= 0 ? 'text-green-600' : 'text-red-600'
+                      (metric.change || 0) >= 0 ? 'text-green-600' : 'text-red-600'
                     }`}
                   >
-                    {metric.change >= 0 ? '+' : ''}
-                    {metric.change.toFixed(1)}%
+                    {(metric.change || 0) >= 0 ? '+' : ''}
+                    {(metric.change || 0).toFixed(1)}%
                   </span>
                   <span className="text-xs text-gray-500 ml-1">vs last period</span>
                 </div>

@@ -53,24 +53,29 @@ export interface UpdatePlanRequest {
   isActive?: boolean;
 }
 
+interface ApiResponse<T> {
+  success: boolean;
+  data: T;
+}
+
 const plansApi = {
   getAll: async (): Promise<PlansResponse> => {
-    const response = await apiClient.get<PlansResponse>('/api/superadmin/plans');
-    return response.data;
+    const response = await apiClient.get<ApiResponse<PlansResponse>>('/api/superadmin/plans');
+    return response.data.data;
   },
 
   create: async (data: CreatePlanRequest): Promise<Plan> => {
-    const response = await apiClient.post<Plan>('/api/superadmin/plans', data);
-    return response.data;
+    const response = await apiClient.post<ApiResponse<Plan>>('/api/superadmin/plans', data);
+    return response.data.data;
   },
 
   update: async (id: string, data: UpdatePlanRequest): Promise<Plan> => {
-    const response = await apiClient.put<Plan>(`/api/superadmin/plans/${id}`, data);
-    return response.data;
+    const response = await apiClient.put<ApiResponse<Plan>>(`/api/superadmin/plans/${id}`, data);
+    return response.data.data;
   },
 
   delete: async (id: string): Promise<void> => {
-    await apiClient.delete(`/api/superadmin/plans/${id}`);
+    await apiClient.delete<ApiResponse<void>>(`/api/superadmin/plans/${id}`);
   },
 };
 

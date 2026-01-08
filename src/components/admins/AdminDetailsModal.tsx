@@ -31,7 +31,7 @@ const AdminDetailsModal: React.FC<AdminDetailsModalProps> = ({
 
     try {
       setLoadingActivity(true);
-      const logs = await adminsApi.getActivity(admin.id);
+      const logs = await adminsApi.getActivity(admin._id);
       setActivityLogs(logs);
     } catch (error) {
       console.error('Error loading activity logs:', error);
@@ -80,10 +80,10 @@ const AdminDetailsModal: React.FC<AdminDetailsModalProps> = ({
                 <label className="text-sm font-medium text-gray-600">Status</label>
                 <div className="mt-1">
                   <Badge
-                    variant={admin.status === 'active' ? 'success' : 'gray'}
+                    variant={admin.isActive ? 'success' : 'gray'}
                     size="sm"
                   >
-                    {admin.status}
+                    {admin.isActive ? 'active' : 'inactive'}
                   </Badge>
                 </div>
               </div>
@@ -100,7 +100,7 @@ const AdminDetailsModal: React.FC<AdminDetailsModalProps> = ({
               <div>
                 <label className="text-sm font-medium text-gray-600">Restaurant</label>
                 <p className="text-gray-900 mt-1">
-                  {admin.restaurantName || 'N/A'}
+                  {typeof admin.restaurantId === 'string' ? admin.restaurantId : admin.restaurantId.name}
                 </p>
               </div>
               <div>

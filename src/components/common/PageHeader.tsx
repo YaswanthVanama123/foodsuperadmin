@@ -3,10 +3,11 @@ import React from 'react';
 interface PageHeaderProps {
   title: string;
   subtitle?: string;
+  actions?: React.ReactNode;
   children?: React.ReactNode;
 }
 
-const PageHeader: React.FC<PageHeaderProps> = ({ title, subtitle, children }) => {
+const PageHeader: React.FC<PageHeaderProps> = ({ title, subtitle, actions, children }) => {
   return (
     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
       <div>
@@ -17,9 +18,9 @@ const PageHeader: React.FC<PageHeaderProps> = ({ title, subtitle, children }) =>
           <p className="mt-1 text-sm text-gray-500">{subtitle}</p>
         )}
       </div>
-      {children && (
+      {(actions || children) && (
         <div className="flex items-center gap-3">
-          {children}
+          {actions || children}
         </div>
       )}
     </div>

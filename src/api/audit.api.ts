@@ -1,7 +1,7 @@
 import apiClient from './client';
 
 export interface AuditLog {
-  id: string;
+  _id: string;
   action: string;
   resource: string;
   resourceId?: string;
@@ -20,6 +20,10 @@ export interface AuditLogsResponse {
   page: number;
   limit: number;
   totalPages: number;
+}
+
+interface ApiResponse<T> {
+  data: T;
 }
 
 export interface AuditLogFilters {
@@ -60,15 +64,15 @@ const auditApi = {
       if (filters.endDate) params.append('endDate', filters.endDate);
     }
 
-    const response = await apiClient.get<AuditLogsResponse>(
+    const response = await apiClient.get<ApiResponse<AuditLogsResponse>>(
       `/api/superadmin/audit-logs?${params.toString()}`
     );
-    return response.data;
+    return response.data.data;
   },
 
   getLogById: async (id: string): Promise<AuditLog> => {
-    const response = await apiClient.get<AuditLog>(`/api/superadmin/audit-logs/${id}`);
-    return response.data;
+    const response = await apiClient.get<ApiResponse<AuditLog>>(`/api/superadmin/audit-logs/${id}`);
+    return response.data.data;
   },
 
   getStatistics: async (filters?: AuditLogFilters): Promise<AuditStatistics> => {
@@ -81,10 +85,10 @@ const auditApi = {
       if (filters.endDate) params.append('endDate', filters.endDate);
     }
 
-    const response = await apiClient.get<AuditStatistics>(
+    const response = await apiClient.get<ApiResponse<AuditStatistics>>(
       `/api/superadmin/audit-logs/stats?${params.toString()}`
     );
-    return response.data;
+    return response.data.data;
   },
 
   exportLogs: async (format: 'csv' | 'json', filters?: AuditLogFilters): Promise<Blob> => {
@@ -111,10 +115,10 @@ const auditApi = {
     if (page) params.append('page', page.toString());
     if (limit) params.append('limit', limit.toString());
 
-    const response = await apiClient.get<AuditLogsResponse>(
+    const response = await apiClient.get<ApiResponse<AuditLogsResponse>>(
       `/api/superadmin/audit-logs/actor/${actorId}?${params.toString()}`
     );
-    return response.data;
+    return response.data.data;
   },
 
   getLogsByResource: async (
@@ -128,20 +132,20 @@ const auditApi = {
     if (page) params.append('page', page.toString());
     if (limit) params.append('limit', limit.toString());
 
-    const response = await apiClient.get<AuditLogsResponse>(
+    const response = await apiClient.get<ApiResponse<AuditLogsResponse>>(
       `/api/superadmin/audit-logs/resource/${resourceId}?${params.toString()}`
     );
-    return response.data;
+    return response.data.data;
   },
 
   cleanupOldLogs: async (daysToKeep: number = 365): Promise<{ deletedCount: number }> => {
     const params = new URLSearchParams();
     params.append('daysToKeep', daysToKeep.toString());
 
-    const response = await apiClient.delete<{ deletedCount: number }>(
+    const response = await apiClient.delete<ApiResponse<{ deletedCount: number }>>(
       `/api/superadmin/audit-logs/cleanup?${params.toString()}`
     );
-    return response.data;
+    return response.data.data;
   },
 };
 

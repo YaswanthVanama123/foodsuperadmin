@@ -20,7 +20,8 @@ const SearchBar: React.FC<SearchBarProps> = ({
 
   React.useEffect(() => {
     onSearch(debouncedValue);
-  }, [debouncedValue, onSearch]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedValue]);
 
   const handleClear = () => {
     setValue('');

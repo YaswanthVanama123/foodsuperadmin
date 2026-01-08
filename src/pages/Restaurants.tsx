@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { Plus, Trash, AlertTriangle } from 'lucide-react';
 import PageHeader from '../components/common/PageHeader';
 import Pagination from '../components/common/Pagination';
@@ -11,7 +11,7 @@ import {
   RestaurantFilters,
 } from '../components/restaurants';
 import { useRestaurants } from '../hooks/useRestaurants';
-import { Restaurant } from '../types';
+import { Restaurant } from '../api/restaurants.api';
 import { RestaurantFormData } from '../components/restaurants/RestaurantForm';
 
 const Restaurants: React.FC = () => {
@@ -40,73 +40,76 @@ const Restaurants: React.FC = () => {
   // Filter restaurants based on status and subscription
   const filteredRestaurants = useMemo(() => {
     return restaurants.filter((restaurant) => {
-      const matchesStatus = statusFilter === '' || restaurant.status === statusFilter;
+      const matchesStatus = statusFilter === '' ||
+        (statusFilter === 'active' && restaurant.isActive) ||
+        (statusFilter === 'inactive' && !restaurant.isActive) ||
+        (statusFilter === 'suspended' && restaurant.subscription?.status === 'cancelled');
       const matchesSubscription =
         subscriptionFilter === '' || restaurant.subscription?.plan === subscriptionFilter;
       return matchesStatus && matchesSubscription;
     });
   }, [restaurants, statusFilter, subscriptionFilter]);
 
-  const handleAddRestaurant = () => {
+  const handleAddRestaurant = useCallback(() => {
     setSelectedRestaurant(undefined);
     setIsFormOpen(true);
-  };
+  }, []);
 
-  const handleEditRestaurant = (restaurant: Restaurant) => {
+  const handleEditRestaurant = useCallback((restaurant: Restaurant) => {
     setSelectedRestaurant(restaurant);
     setIsFormOpen(true);
-  };
+  }, []);
 
-  const handleViewRestaurant = (restaurant: Restaurant) => {
+  const handleViewRestaurant = useCallback((restaurant: Restaurant) => {
     setViewRestaurant(restaurant);
     setIsDetailsOpen(true);
-  };
+  }, []);
 
-  const handleDeleteClick = (restaurant: Restaurant) => {
+  const handleDeleteClick = useCallback((restaurant: Restaurant) => {
     setRestaurantToDelete(restaurant);
-  };
+  }, []);
 
-  const handleDeleteConfirm = async () => {
+  const handleDeleteConfirm = useCallback(async () => {
     if (restaurantToDelete) {
       try {
-        await deleteRestaurant(restaurantToDelete.id);
+        await deleteRestaurant(restaurantToDelete._id);
         setRestaurantToDelete(null);
       } catch (error) {
         console.error('Error deleting restaurant:', error);
       }
     }
-  };
+  }, [restaurantToDelete, deleteRestaurant]);
 
-  const handleStatusChange = async (
+  const handleStatusChange = useCallback(async (
     restaurant: Restaurant,
-    status: 'active' | 'suspended' | 'pending'
+    status: 'active' | 'inactive' | 'suspended'
   ) => {
     try {
-      await updateStatus(restaurant.id, status);
+      await updateStatus(restaurant._id, status);
     } catch (error) {
       console.error('Error updating status:', error);
     }
-  };
+  }, [updateStatus]);
 
-  const handleSubmit = async (data: RestaurantFormData) => {
+  const handleSubmit = useCallback(async (data: RestaurantFormData) => {
     if (selectedRestaurant) {
-      await updateRestaurant(selectedRestaurant.id, data);
+      await updateRestaurant(selectedRestaurant._id, data);
     } else {
       await createRestaurant(data);
     }
     setIsFormOpen(false);
-  };
+  }, [selectedRestaurant, updateRestaurant, createRestaurant]);
 
-  const handleSearch = (value: string) => {
+  const handleSearch = useCallback((value: string) => {
     setSearchQuery(value);
     setCurrentPage(1);
     fetchRestaurants(1, 10, value);
-  };
+  }, [fetchRestaurants]);
 
-  const handlePageChange = (page: number) => {
+  const handlePageChange = useCallback((page: number) => {
     setCurrentPage(page);
     fetchRestaurants(page, 10, searchQuery);
-  };
+  }, [fetchRestaurants, searchQuery]);
 
   return (
     <div className="space-y-6">
@@ -140,19 +143,19 @@ const Restaurants: React.FC = () => {
         <div className="bg-white rounded-lg border border-gray-200 p-4">
           <p className="text-sm font-medium text-gray-500">Active</p>
           <p className="text-2xl font-bold text-green-600 mt-1">
-            {restaurants.filter((r) => r.status === 'active').length}
+            {restaurants.filter((r) => r.isActive).length}
+          </p>
+        </div>
+        <div className="bg-white rounded-lg border border-gray-200 p-4">
+          <p className="text-sm font-medium text-gray-500">Inactive</p>
+          <p className="text-2xl font-bold text-red-600 mt-1">
+            {restaurants.filter((r) => !r.isActive).length}
           </p>
         </div>
         <div className="bg-white rounded-lg border border-gray-200 p-4">
           <p className="text-sm font-medium text-gray-500">Suspended</p>
-          <p className="text-2xl font-bold text-red-600 mt-1">
-            {restaurants.filter((r) => r.status === 'suspended').length}
-          </p>
-        </div>
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <p className="text-sm font-medium text-gray-500">Pending</p>
           <p className="text-2xl font-bold text-yellow-600 mt-1">
-            {restaurants.filter((r) => r.status === 'pending').length}
+            {restaurants.filter((r) => r.subscription?.status === 'cancelled').length}
           </p>
         </div>
       </div>

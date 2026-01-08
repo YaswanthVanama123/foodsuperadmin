@@ -1,8 +1,8 @@
 import React from 'react';
-import { MoreVertical, Eye, Edit, Ban, CheckCircle, Trash } from 'lucide-react';
+import { Eye, Edit, Ban, CheckCircle, Trash } from 'lucide-react';
 import DataTable, { Column } from '../common/DataTable';
 import Badge from '../ui/Badge';
-import { Restaurant } from '../../types';
+import { Restaurant } from '../../api/restaurants.api';
 import { formatDate } from '../../utils/format';
 
 interface RestaurantsTableProps {
@@ -10,7 +10,7 @@ interface RestaurantsTableProps {
   isLoading?: boolean;
   onView: (restaurant: Restaurant) => void;
   onEdit: (restaurant: Restaurant) => void;
-  onStatusChange: (restaurant: Restaurant, status: 'active' | 'suspended' | 'pending') => void;
+  onStatusChange: (restaurant: Restaurant, status: 'active' | 'inactive' | 'suspended') => void;
   onDelete: (restaurant: Restaurant) => void;
 }
 
@@ -22,16 +22,11 @@ const RestaurantsTable: React.FC<RestaurantsTableProps> = ({
   onStatusChange,
   onDelete,
 }) => {
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'active':
-        return <Badge variant="success">Active</Badge>;
-      case 'suspended':
-        return <Badge variant="danger">Suspended</Badge>;
-      case 'pending':
-        return <Badge variant="warning">Pending</Badge>;
-      default:
-        return <Badge variant="gray">{status}</Badge>;
+  const getStatusBadge = (isActive: boolean) => {
+    if (isActive) {
+      return <Badge variant="success">Active</Badge>;
+    } else {
+      return <Badge variant="danger">Inactive</Badge>;
     }
   };
 
@@ -61,7 +56,7 @@ const RestaurantsTable: React.FC<RestaurantsTableProps> = ({
       render: (restaurant) => (
         <div>
           <div className="font-medium text-gray-900">{restaurant.name}</div>
-          <div className="text-sm text-gray-500">{restaurant.slug}</div>
+          <div className="text-sm text-gray-500">{restaurant.subdomain}</div>
         </div>
       ),
     },
@@ -80,7 +75,9 @@ const RestaurantsTable: React.FC<RestaurantsTableProps> = ({
       label: 'Location',
       render: (restaurant) => (
         <div className="text-sm text-gray-700">
-          {restaurant.address}
+          {restaurant.address?.city && restaurant.address?.state
+            ? `${restaurant.address.city}, ${restaurant.address.state}`
+            : 'N/A'}
         </div>
       ),
     },
@@ -94,7 +91,7 @@ const RestaurantsTable: React.FC<RestaurantsTableProps> = ({
       key: 'status',
       label: 'Status',
       sortable: true,
-      render: (restaurant) => getStatusBadge(restaurant.status),
+      render: (restaurant) => getStatusBadge(restaurant.isActive),
     },
     {
       key: 'createdAt',
@@ -131,14 +128,14 @@ const RestaurantsTable: React.FC<RestaurantsTableProps> = ({
           >
             <Edit className="h-4 w-4" />
           </button>
-          {restaurant.status === 'active' ? (
+          {restaurant.isActive ? (
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                onStatusChange(restaurant, 'suspended');
+                onStatusChange(restaurant, 'inactive');
               }}
               className="p-2 text-gray-400 hover:text-red-600 transition-colors"
-              title="Suspend"
+              title="Deactivate"
             >
               <Ban className="h-4 w-4" />
             </button>
@@ -175,7 +172,7 @@ const RestaurantsTable: React.FC<RestaurantsTableProps> = ({
       columns={columns}
       isLoading={isLoading}
       emptyMessage="No restaurants found"
-      rowKey="id"
+      rowKey="_id"
     />
   );
 };

@@ -44,8 +44,8 @@ const Admins: React.FC = () => {
       setError(null);
 
       const [adminsResponse, restaurantsResponse] = await Promise.all([
-        adminsApi.getAll(),
-        restaurantsApi.getAll(1, 100),
+        adminsApi.getAll({ limit: 1000 }),
+        restaurantsApi.getAll({ limit: 100 }),
       ]);
 
       setAdmins(adminsResponse.admins);
@@ -65,18 +65,30 @@ const Admins: React.FC = () => {
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(
-        (admin) =>
-          admin.username.toLowerCase().includes(query) ||
-          admin.email.toLowerCase().includes(query) ||
-          admin.firstName.toLowerCase().includes(query) ||
-          admin.lastName.toLowerCase().includes(query) ||
-          admin.restaurantName?.toLowerCase().includes(query)
+        (admin) => {
+          const restaurantName = typeof admin.restaurantId === 'object'
+            ? admin.restaurantId.name
+            : '';
+
+          return (
+            admin.username.toLowerCase().includes(query) ||
+            admin.email.toLowerCase().includes(query) ||
+            (admin.firstName?.toLowerCase() || '').includes(query) ||
+            (admin.lastName?.toLowerCase() || '').includes(query) ||
+            restaurantName.toLowerCase().includes(query)
+          );
+        }
       );
     }
 
     // Filter by restaurant
     if (selectedRestaurant) {
-      filtered = filtered.filter((admin) => admin.restaurantId === selectedRestaurant);
+      filtered = filtered.filter((admin) => {
+        const restaurantId = typeof admin.restaurantId === 'object'
+          ? admin.restaurantId._id
+          : admin.restaurantId;
+        return restaurantId === selectedRestaurant;
+      });
     }
 
     setFilteredAdmins(filtered);
@@ -129,7 +141,7 @@ const Admins: React.FC = () => {
     if (!selectedAdmin) return;
 
     try {
-      await adminsApi.delete(selectedAdmin.id);
+      await adminsApi.delete(selectedAdmin._id);
       setIsDeleteDialogOpen(false);
       setSelectedAdmin(null);
       loadData();
@@ -151,7 +163,7 @@ const Admins: React.FC = () => {
   const restaurantOptions = [
     { value: '', label: 'All Restaurants' },
     ...restaurants.map((restaurant) => ({
-      value: restaurant.id,
+      value: restaurant._id,
       label: restaurant.name,
     })),
   ];
@@ -214,7 +226,7 @@ const Admins: React.FC = () => {
             <div>
               <p className="text-sm font-medium text-gray-600">Active Admins</p>
               <p className="text-3xl font-bold text-green-600 mt-1">
-                {admins.filter((admin) => admin.status === 'active').length}
+                {admins.filter((admin) => admin.isActive).length}
               </p>
             </div>
             <div className="p-3 bg-green-100 rounded-lg">
@@ -228,7 +240,7 @@ const Admins: React.FC = () => {
             <div>
               <p className="text-sm font-medium text-gray-600">Inactive Admins</p>
               <p className="text-3xl font-bold text-gray-600 mt-1">
-                {admins.filter((admin) => admin.status === 'inactive').length}
+                {admins.filter((admin) => !admin.isActive).length}
               </p>
             </div>
             <div className="p-3 bg-gray-100 rounded-lg">

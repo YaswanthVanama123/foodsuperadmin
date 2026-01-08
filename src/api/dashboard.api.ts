@@ -1,15 +1,5 @@
 import apiClient from './client';
-
-export interface DashboardStats {
-  totalRestaurants: number;
-  activeRestaurants: number;
-  totalAdmins: number;
-  totalRevenue: number;
-  monthlyRevenue: number;
-  activeSubscriptions: number;
-  pendingTickets: number;
-  growthRate: number;
-}
+import { PlatformStats } from '../types';
 
 export interface ActivityItem {
   id: string;
@@ -26,14 +16,20 @@ export interface RecentActivity {
 }
 
 const dashboardApi = {
-  getStats: async (): Promise<DashboardStats> => {
-    const response = await apiClient.get<DashboardStats>('/api/superadmin/dashboard/stats');
-    return response.data;
+  // Get platform statistics (same as analytics stats)
+  getStats: async (): Promise<PlatformStats> => {
+    const response = await apiClient.get<{ success: boolean; data: PlatformStats }>(
+      '/api/superadmin/analytics/stats'
+    );
+    return response.data.data;
   },
 
-  getRecentActivity: async (): Promise<RecentActivity> => {
-    const response = await apiClient.get<RecentActivity>('/api/superadmin/dashboard/activity');
-    return response.data;
+  // Get recent activity from audit logs
+  getRecentActivity: async (limit: number = 10): Promise<RecentActivity> => {
+    const response = await apiClient.get<{ success: boolean; data: RecentActivity }>(
+      `/api/superadmin/audit-logs?limit=${limit}`
+    );
+    return response.data.data;
   },
 };
 

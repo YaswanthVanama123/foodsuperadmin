@@ -44,9 +44,9 @@ const Support: React.FC = () => {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(
         (ticket) =>
-          ticket.ticketNumber.toLowerCase().includes(query) ||
+          ticket.ticketNumber?.toLowerCase().includes(query) ||
           ticket.subject.toLowerCase().includes(query) ||
-          ticket.description.toLowerCase().includes(query) ||
+          ticket.description?.toLowerCase().includes(query) ||
           ticket.restaurantName?.toLowerCase().includes(query)
       );
     }
@@ -73,7 +73,7 @@ const Support: React.FC = () => {
     try {
       const updatedTicket = await supportApi.updateTicket(id, data);
       setTickets((prev) =>
-        prev.map((ticket) => (ticket.id === id ? updatedTicket : ticket))
+        prev.map((ticket) => (ticket._id === id ? updatedTicket : ticket))
       );
       setIsModalOpen(false);
     } catch (error) {

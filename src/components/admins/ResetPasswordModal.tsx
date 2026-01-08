@@ -61,7 +61,7 @@ const ResetPasswordModal: React.FC<ResetPasswordModalProps> = ({
 
     try {
       setIsSubmitting(true);
-      await adminsApi.resetPassword(admin.id, newPassword);
+      await adminsApi.resetPassword(admin._id, newPassword);
       onSuccess();
       onClose();
     } catch (error: any) {

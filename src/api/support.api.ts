@@ -1,7 +1,7 @@
 import apiClient from './client';
 
 export interface SupportTicket {
-  id: string;
+  _id: string;
   ticketNumber: string;
   restaurantId: string;
   restaurantName?: string;
@@ -25,6 +25,10 @@ export interface TicketsResponse {
   page?: number;
   limit?: number;
   totalPages?: number;
+}
+
+interface ApiResponse<T> {
+  data: T;
 }
 
 export interface TicketMessage {
@@ -87,57 +91,57 @@ const supportApi = {
     if (priority) params.append('priority', priority);
     if (restaurantId) params.append('restaurantId', restaurantId);
 
-    const response = await apiClient.get<TicketsResponse>(
+    const response = await apiClient.get<ApiResponse<TicketsResponse>>(
       `/api/superadmin/tickets?${params.toString()}`
     );
-    return response.data;
+    return response.data.data;
   },
 
   getTicketById: async (id: string): Promise<SupportTicket> => {
-    const response = await apiClient.get<SupportTicket>(`/api/superadmin/tickets/${id}`);
-    return response.data;
+    const response = await apiClient.get<ApiResponse<SupportTicket>>(`/api/superadmin/tickets/${id}`);
+    return response.data.data;
   },
 
   createTicket: async (data: CreateTicketRequest): Promise<SupportTicket> => {
-    const response = await apiClient.post<SupportTicket>('/api/superadmin/tickets', data);
-    return response.data;
+    const response = await apiClient.post<ApiResponse<SupportTicket>>('/api/superadmin/tickets', data);
+    return response.data.data;
   },
 
   updateTicket: async (id: string, data: UpdateTicketRequest): Promise<SupportTicket> => {
-    const response = await apiClient.put<SupportTicket>(`/api/superadmin/tickets/${id}`, data);
-    return response.data;
+    const response = await apiClient.put<ApiResponse<SupportTicket>>(`/api/superadmin/tickets/${id}`, data);
+    return response.data.data;
   },
 
   updateStatus: async (
     id: string,
     status: 'open' | 'in-progress' | 'resolved' | 'closed'
   ): Promise<SupportTicket> => {
-    const response = await apiClient.patch<SupportTicket>(`/api/superadmin/tickets/${id}/status`, {
+    const response = await apiClient.patch<ApiResponse<SupportTicket>>(`/api/superadmin/tickets/${id}/status`, {
       status,
     });
-    return response.data;
+    return response.data.data;
   },
 
   assignTicket: async (id: string, assignedTo: string): Promise<SupportTicket> => {
-    const response = await apiClient.patch<SupportTicket>(`/api/superadmin/tickets/${id}/assign`, {
+    const response = await apiClient.patch<ApiResponse<SupportTicket>>(`/api/superadmin/tickets/${id}/assign`, {
       assignedTo,
     });
-    return response.data;
+    return response.data.data;
   },
 
   addMessage: async (id: string, data: AddMessageRequest): Promise<SupportTicket> => {
-    const response = await apiClient.post<SupportTicket>(
+    const response = await apiClient.post<ApiResponse<SupportTicket>>(
       `/api/superadmin/tickets/${id}/messages`,
       data
     );
-    return response.data;
+    return response.data.data;
   },
 
   resolveTicket: async (id: string, resolutionNotes?: string): Promise<SupportTicket> => {
-    const response = await apiClient.post<SupportTicket>(`/api/superadmin/tickets/${id}/resolve`, {
+    const response = await apiClient.post<ApiResponse<SupportTicket>>(`/api/superadmin/tickets/${id}/resolve`, {
       resolutionNotes,
     });
-    return response.data;
+    return response.data.data;
   },
 
   deleteTicket: async (id: string): Promise<void> => {
@@ -145,8 +149,8 @@ const supportApi = {
   },
 
   getStatistics: async (): Promise<TicketStatistics> => {
-    const response = await apiClient.get<TicketStatistics>('/api/superadmin/tickets/stats');
-    return response.data;
+    const response = await apiClient.get<ApiResponse<TicketStatistics>>('/api/superadmin/tickets/stats');
+    return response.data.data;
   },
 };
 

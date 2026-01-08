@@ -105,7 +105,7 @@ const SubscriptionForm: React.FC<SubscriptionFormProps> = ({
               >
                 <option value="">Select Restaurant</option>
                 {restaurants.map((restaurant) => (
-                  <option key={restaurant.id} value={restaurant.id}>
+                  <option key={restaurant._id} value={restaurant._id}>
                     {restaurant.name}
                   </option>
                 ))}
