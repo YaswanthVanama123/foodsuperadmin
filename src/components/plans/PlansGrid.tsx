@@ -38,7 +38,7 @@ const PlansGrid: React.FC<PlansGridProps> = ({
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {plans.map((plan) => (
         <PlanCard
-          key={plan.id}
+          key={plan._id}
           plan={plan}
           onEdit={onEdit}
           onDelete={onDelete}

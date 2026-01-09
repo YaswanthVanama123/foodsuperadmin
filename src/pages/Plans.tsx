@@ -37,7 +37,7 @@ const Plans: React.FC = () => {
 
   const handleDelete = async (plan: Plan) => {
     if (window.confirm(`Are you sure you want to delete the "${plan.name}" plan? This action cannot be undone.`)) {
-      const result = await deletePlan(plan.id);
+      const result = await deletePlan(plan._id);
       if (result.success) {
         alert('Plan deleted successfully');
       } else {

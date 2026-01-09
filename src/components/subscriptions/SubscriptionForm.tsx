@@ -47,7 +47,7 @@ const SubscriptionForm: React.FC<SubscriptionFormProps> = ({
 
   useEffect(() => {
     if (formData.planId) {
-      const plan = plans.find((p) => p.id === formData.planId);
+      const plan = plans.find((p) => p._id === formData.planId);
       if (plan) {
         setSelectedPlan(plan);
         const basePrice = plan.price;
@@ -125,7 +125,7 @@ const SubscriptionForm: React.FC<SubscriptionFormProps> = ({
               >
                 <option value="">Select Plan</option>
                 {plans.map((plan) => (
-                  <option key={plan.id} value={plan.id}>
+                  <option key={plan._id} value={plan._id}>
                     {plan.name} - ${plan.price}/{plan.billingCycle}
                   </option>
                 ))}

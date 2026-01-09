@@ -40,6 +40,7 @@ const Subscriptions: React.FC = () => {
     const fetchRestaurants = async () => {
       try {
         const response = await restaurantsApi.getAll({ page: 1, limit: 100 });
+        console.log('[Subscriptions] Fetched restaurants:', response.restaurants);
         setRestaurants(response.restaurants);
       } catch (err) {
         console.error('Failed to fetch restaurants:', err);
@@ -48,6 +49,12 @@ const Subscriptions: React.FC = () => {
 
     fetchRestaurants();
   }, []);
+
+  // Debug logging
+  useEffect(() => {
+    console.log('[Subscriptions] Restaurants:', restaurants);
+    console.log('[Subscriptions] Plans:', plans);
+  }, [restaurants, plans]);
 
   // Filter subscriptions
   const filteredSubscriptions = subscriptions.filter((sub) => {

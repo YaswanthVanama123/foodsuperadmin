@@ -33,10 +33,22 @@ apiClient.interceptors.response.use(
   },
   (error: AxiosError) => {
     if (error.response?.status === 401) {
-      // Clear all auth data and redirect to login
-      localStorage.removeItem('superadmin_token');
-      localStorage.removeItem('superadmin_data');
-      window.location.href = '/login';
+      // Only clear auth if it's an actual token expiry/invalid error
+      // Don't clear on network errors or backend downtime
+      const errorMessage = (error.response?.data as any)?.message || '';
+      if (errorMessage.includes('token') || errorMessage.includes('expired') || errorMessage.includes('invalid')) {
+        console.log('[Super Admin API] Token expired or invalid - clearing auth and redirecting to login');
+        // Clear all auth data and redirect to login
+        localStorage.removeItem('superadmin_token');
+        localStorage.removeItem('superadmin_data');
+        window.location.href = '/login';
+      } else {
+        console.warn('[Super Admin API] Received 401 but not clearing auth - might be temporary server issue');
+      }
+    } else if (!error.response) {
+      // Network error - backend is down or unreachable
+      console.warn('[Super Admin API] Network error - backend may be restarting or unreachable');
+      // Don't clear auth data - keep user logged in
     }
 
     return Promise.reject(error);

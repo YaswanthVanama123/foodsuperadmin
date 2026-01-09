@@ -7,7 +7,7 @@ export interface PlanFeature {
 }
 
 export interface Plan {
-  id: string;
+  _id: string; // Changed from 'id' to '_id' to match MongoDB backend
   name: string;
   description: string;
   price: number;
