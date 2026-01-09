@@ -6,7 +6,8 @@ import analyticsApi, {
   RestaurantGrowthResponse,
   TopRestaurantsResponse,
 } from '../api/analytics.api';
-import dashboardApi, { DashboardStats } from '../api/dashboard.api';
+import dashboardApi from '../api/dashboard.api';
+import { PlatformStats } from '../types';
 import {
   DateRangePicker,
   PlatformMetricsCards,
@@ -31,7 +32,7 @@ const Analytics: React.FC = () => {
   );
   const [topRestaurants, setTopRestaurants] =
     useState<TopRestaurantsResponse | null>(null);
-  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [stats, setStats] = useState<PlatformStats | null>(null);
 
   const fetchRevenueData = async () => {
     try {
@@ -99,16 +100,26 @@ const Analytics: React.FC = () => {
   };
 
   const calculateAvgRevenuePerRestaurant = (): number => {
-    if (!stats || stats.activeRestaurants === 0) return 0;
-    return stats.totalRevenue / stats.activeRestaurants;
+    if (!stats || !stats.revenue || !stats.restaurants) return 0;
+    const totalRevenue = stats.revenue.totalRevenue || 0;
+    const activeRestaurants = stats.restaurants.active || 0;
+    if (activeRestaurants === 0) return 0;
+    return totalRevenue / activeRestaurants;
+  };
+
+  const calculateRevenueGrowth = (): number => {
+    if (!revenueData) return 0;
+    return revenueData.growthRate || 0;
   };
 
   const calculateOrdersGrowth = (): number => {
-    return Math.random() * 20 - 5;
+    // TODO: Implement actual growth calculation when historical data is available
+    return 0;
   };
 
   const calculateUsersGrowth = (): number => {
-    return Math.random() * 25 - 5;
+    // TODO: Implement actual growth calculation when historical data is available
+    return 0;
   };
 
   return (
@@ -152,12 +163,12 @@ const Analytics: React.FC = () => {
         {/* Platform Metrics Cards */}
         {stats && (
           <PlatformMetricsCards
-            totalRevenue={stats.totalRevenue}
+            totalRevenue={stats.revenue?.totalRevenue || 0}
             avgRevenuePerRestaurant={calculateAvgRevenuePerRestaurant()}
-            totalOrders={Math.floor(Math.random() * 50000 + 10000)}
-            activeUsers={Math.floor(Math.random() * 20000 + 5000)}
-            revenueGrowth={stats.growthRate}
-            avgRevenueGrowth={Math.random() * 15 - 3}
+            totalOrders={stats.orders?.total || 0}
+            activeUsers={stats.users?.totalCustomers || 0}
+            revenueGrowth={calculateRevenueGrowth()}
+            avgRevenueGrowth={0}
             ordersGrowth={calculateOrdersGrowth()}
             usersGrowth={calculateUsersGrowth()}
           />

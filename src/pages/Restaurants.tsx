@@ -112,7 +112,7 @@ const Restaurants: React.FC = () => {
   }, [fetchRestaurants, searchQuery]);
 
   return (
-    <div className="space-y-6">
+    <div className="p-6 space-y-6">
       <PageHeader
         title="Restaurants Management"
         subtitle="Manage all restaurants on the platform"

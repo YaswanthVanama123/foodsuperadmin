@@ -120,30 +120,54 @@ const RestaurantForm: React.FC<RestaurantFormProps> = ({
   };
 
   const handleNameChange = (value: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      name: value,
-      subdomain: generateSubdomain(value),
-    }));
+    // Only auto-generate subdomain when creating new restaurant
+    if (!restaurant) {
+      setFormData((prev) => ({
+        ...prev,
+        name: value,
+        subdomain: generateSubdomain(value),
+      }));
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        name: value,
+      }));
+    }
   };
 
   const validate = (): boolean => {
     const newErrors: Partial<Record<keyof RestaurantFormData, string>> = {};
 
+    // Name validation: 2-100 characters (matches backend)
     if (!formData.name.trim()) {
       newErrors.name = 'Restaurant name is required';
+    } else if (formData.name.trim().length < 2) {
+      newErrors.name = 'Restaurant name must be at least 2 characters';
+    } else if (formData.name.trim().length > 100) {
+      newErrors.name = 'Restaurant name must not exceed 100 characters';
     }
 
-    if (!formData.subdomain.trim()) {
-      newErrors.subdomain = 'Subdomain is required';
+    // Subdomain validation: 3-63 characters, only for new restaurants
+    if (!restaurant) {
+      if (!formData.subdomain.trim()) {
+        newErrors.subdomain = 'Subdomain is required';
+      } else if (formData.subdomain.length < 3) {
+        newErrors.subdomain = 'Subdomain must be at least 3 characters';
+      } else if (formData.subdomain.length > 63) {
+        newErrors.subdomain = 'Subdomain must not exceed 63 characters';
+      } else if (!/^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$/.test(formData.subdomain)) {
+        newErrors.subdomain = 'Subdomain must start and end with a letter or number, and can only contain lowercase letters, numbers, and hyphens';
+      }
     }
 
+    // Email validation (matches backend regex)
     if (!formData.email.trim()) {
       newErrors.email = 'Email is required';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+    } else if (!/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(formData.email)) {
       newErrors.email = 'Invalid email format';
     }
 
+    // Phone validation
     if (!formData.phone.trim()) {
       newErrors.phone = 'Phone number is required';
     }
@@ -217,8 +241,13 @@ const RestaurantForm: React.FC<RestaurantFormProps> = ({
               value={formData.subdomain}
               onChange={(e) => setFormData({ ...formData, subdomain: e.target.value })}
               error={errors.subdomain}
-              helperText="Used for the restaurant's unique subdomain (e.g., the-gourmet-kitchen.patlinks.com)"
-              required
+              helperText={
+                restaurant
+                  ? "Subdomain cannot be changed after creation"
+                  : "Used for the restaurant's unique subdomain (e.g., the-gourmet-kitchen.patlinks.com)"
+              }
+              disabled={!!restaurant}
+              required={!restaurant}
             />
 
             <div className="grid grid-cols-2 gap-4">

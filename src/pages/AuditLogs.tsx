@@ -82,9 +82,9 @@ const AuditLogs: React.FC = () => {
           apiFilters
         );
 
-        setLogs(response.logs);
-        setTotalPages(response.totalPages);
-        setTotalLogs(response.total);
+        setLogs(response.logs || []);
+        setTotalPages(response.totalPages || 1);
+        setTotalLogs(response.total || 0);
       } catch (err: any) {
         setError(err.response?.data?.message || 'Failed to load audit logs');
         console.error('Error fetching audit logs:', err);
@@ -150,13 +150,13 @@ const AuditLogs: React.FC = () => {
           <div>
             <p className="text-indigo-100 text-sm font-medium">Total Audit Logs</p>
             <p className="text-4xl font-bold mt-1">
-              {totalLogs.toLocaleString()}
+              {(totalLogs || 0).toLocaleString()}
             </p>
           </div>
           <div className="text-right">
             <p className="text-indigo-100 text-sm font-medium">Current Page</p>
             <p className="text-2xl font-semibold mt-1">
-              {currentPage} / {totalPages}
+              {currentPage} / {totalPages || 1}
             </p>
           </div>
         </div>
