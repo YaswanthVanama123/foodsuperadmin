@@ -24,7 +24,12 @@ export interface Plan {
 
 export interface PlansResponse {
   plans: Plan[];
-  total: number;
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+    pages: number;
+  };
 }
 
 export interface CreatePlanRequest {

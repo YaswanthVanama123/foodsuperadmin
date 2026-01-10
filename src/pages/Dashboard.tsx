@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import {
@@ -35,26 +35,26 @@ const Dashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Prevent duplicate API calls (React Strict Mode)
+  const isFetching = useRef(false);
+
   // Fetch dashboard data
   const fetchDashboardData = useCallback(async (silent: boolean = false) => {
+    // Prevent concurrent requests
+    if (isFetching.current) return;
+
     try {
+      isFetching.current = true;
+
       if (!silent) {
         setLoading(true);
         setError(null);
       }
 
-      // Fetch stats
-      const statsData = await dashboardApi.getStats();
-      setStats(statsData);
-
-      // Try to fetch recent activity, but don't fail if it errors
-      try {
-        const activityData = await dashboardApi.getRecentActivity(10);
-        setRecentActivity(activityData.activities || []);
-      } catch (activityError) {
-        console.warn('Failed to fetch recent activity:', activityError);
-        setRecentActivity([]);
-      }
+      // OPTIMIZED: Single API call for both stats and recent activity
+      const pageData = await dashboardApi.getPageData(10);
+      setStats(pageData.stats);
+      setRecentActivity(pageData.recentActivity.activities || []);
     } catch (err: any) {
       console.error('Error fetching dashboard data:', err);
       const errorMessage = err.response?.data?.message || 'Failed to load dashboard data';
@@ -67,18 +67,12 @@ const Dashboard: React.FC = () => {
       if (!silent) {
         setLoading(false);
       }
+      isFetching.current = false;
     }
   }, []);
 
   useEffect(() => {
     fetchDashboardData();
-
-    // Refresh data every 30 seconds for real-time updates
-    const interval = setInterval(() => {
-      fetchDashboardData(true);
-    }, 30000);
-
-    return () => clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -126,7 +120,7 @@ const Dashboard: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-violet-50 via-purple-50 to-fuchsia-50">
+      <div className="flex items-center justify-center min-h-[60vh]">
         <div className="flex flex-col items-center">
           <div className="relative">
             <div className="animate-spin rounded-full h-20 w-20 border-b-4 border-violet-600"></div>
@@ -141,7 +135,7 @@ const Dashboard: React.FC = () => {
 
   if (error && !stats) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-violet-50 via-purple-50 to-fuchsia-50">
+      <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center bg-white rounded-2xl shadow-2xl p-8 max-w-md">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-100 mb-4">
             <Activity className="w-8 h-8 text-red-600" />
@@ -199,108 +193,106 @@ const Dashboard: React.FC = () => {
   ] : [];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-violet-50 via-purple-50 to-fuchsia-50 p-6">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center mb-2">
-            <Sparkles className="w-8 h-8 text-violet-600 mr-3" />
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">
-              Platform Dashboard
-            </h1>
-          </div>
-          <p className="text-gray-600 text-lg ml-11">
-            Real-time overview of the Patlinks platform
-          </p>
-          <div className="flex items-center mt-2 ml-11">
-            <Activity className="w-4 h-4 text-green-500 mr-2 animate-pulse" />
-            <span className="text-sm text-gray-600">Live data - Updates every 30 seconds</span>
-          </div>
+    <div className="max-w-7xl mx-auto">
+      {/* Header */}
+      <div className="mb-8">
+        <div className="flex items-center mb-2">
+          <Sparkles className="w-8 h-8 text-violet-600 mr-3" />
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">
+            Platform Dashboard
+          </h1>
         </div>
-
-        {/* Main Stats Grid */}
-        <StatsGrid stats={mainStats} />
-
-        {/* Secondary Stats - Subscription Breakdown */}
-        {stats && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-            <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">Starter Plans</h3>
-                <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-                  <TrendingUp className="w-5 h-5 text-blue-600" />
-                </div>
-              </div>
-              <p className="text-3xl font-bold text-gray-900 mb-2">
-                {formatNumber(getPlanCount('Starter'))}
-              </p>
-              <p className="text-sm text-gray-600">
-                Revenue: {formatCurrency(getPlanRevenue('Starter'))}
-              </p>
-            </div>
-
-            <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">Professional Plans</h3>
-                <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center">
-                  <TrendingUp className="w-5 h-5 text-purple-600" />
-                </div>
-              </div>
-              <p className="text-3xl font-bold text-gray-900 mb-2">
-                {formatNumber(getPlanCount('Professional'))}
-              </p>
-              <p className="text-sm text-gray-600">
-                Revenue: {formatCurrency(getPlanRevenue('Professional'))}
-              </p>
-            </div>
-
-            <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">Enterprise Plans</h3>
-                <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center">
-                  <TrendingUp className="w-5 h-5 text-orange-600" />
-                </div>
-              </div>
-              <p className="text-3xl font-bold text-gray-900 mb-2">
-                {formatNumber(getPlanCount('Enterprise'))}
-              </p>
-              <p className="text-sm text-gray-600">
-                Revenue: {formatCurrency(getPlanRevenue('Enterprise'))}
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* Quick Actions */}
-        <div className="mb-8">
-          <QuickActions />
+        <p className="text-gray-600 text-lg ml-11">
+          Real-time overview of the Patlinks platform
+        </p>
+        <div className="flex items-center mt-2 ml-11">
+          <Activity className="w-4 h-4 text-green-500 mr-2 animate-pulse" />
+          <span className="text-sm text-gray-600">Platform overview</span>
         </div>
-
-        {/* Recent Activity */}
-        {recentActivity.length > 0 && (
-          <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Recent Activity</h2>
-            <RecentActivityTable activities={recentActivity} />
-          </div>
-        )}
-
-        {/* Empty State */}
-        {stats && stats.restaurants.total === 0 && (
-          <div className="bg-white rounded-xl shadow-lg p-12 border border-gray-100 text-center">
-            <Building2 className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">No Restaurants Yet</h3>
-            <p className="text-gray-600 mb-6">
-              Get started by creating your first restaurant on the platform.
-            </p>
-            <button
-              onClick={() => navigate('/restaurants')}
-              className="px-6 py-3 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-lg font-semibold hover:from-violet-700 hover:to-purple-700 transition-all shadow-lg"
-            >
-              Create Restaurant
-            </button>
-          </div>
-        )}
       </div>
+
+      {/* Main Stats Grid */}
+      <StatsGrid stats={mainStats} />
+
+      {/* Secondary Stats - Subscription Breakdown */}
+      {stats && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+          <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Starter Plans</h3>
+              <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                <TrendingUp className="w-5 h-5 text-blue-600" />
+              </div>
+            </div>
+            <p className="text-3xl font-bold text-gray-900 mb-2">
+              {formatNumber(getPlanCount('Starter'))}
+            </p>
+            <p className="text-sm text-gray-600">
+              Revenue: {formatCurrency(getPlanRevenue('Starter'))}
+            </p>
+          </div>
+
+          <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Professional Plans</h3>
+              <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center">
+                <TrendingUp className="w-5 h-5 text-purple-600" />
+              </div>
+            </div>
+            <p className="text-3xl font-bold text-gray-900 mb-2">
+              {formatNumber(getPlanCount('Professional'))}
+            </p>
+            <p className="text-sm text-gray-600">
+              Revenue: {formatCurrency(getPlanRevenue('Professional'))}
+            </p>
+          </div>
+
+          <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Enterprise Plans</h3>
+              <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center">
+                <TrendingUp className="w-5 h-5 text-orange-600" />
+              </div>
+            </div>
+            <p className="text-3xl font-bold text-gray-900 mb-2">
+              {formatNumber(getPlanCount('Enterprise'))}
+            </p>
+            <p className="text-sm text-gray-600">
+              Revenue: {formatCurrency(getPlanRevenue('Enterprise'))}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Quick Actions */}
+      <div className="mb-8">
+        <QuickActions />
+      </div>
+
+      {/* Recent Activity */}
+      {recentActivity.length > 0 && (
+        <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">Recent Activity</h2>
+          <RecentActivityTable activities={recentActivity} />
+        </div>
+      )}
+
+      {/* Empty State */}
+      {stats && stats.restaurants.total === 0 && (
+        <div className="bg-white rounded-xl shadow-lg p-12 border border-gray-100 text-center">
+          <Building2 className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+          <h3 className="text-xl font-semibold text-gray-900 mb-2">No Restaurants Yet</h3>
+          <p className="text-gray-600 mb-6">
+            Get started by creating your first restaurant on the platform.
+          </p>
+          <button
+            onClick={() => navigate('/restaurants')}
+            className="px-6 py-3 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-lg font-semibold hover:from-violet-700 hover:to-purple-700 transition-all shadow-lg"
+          >
+            Create Restaurant
+          </button>
+        </div>
+      )}
     </div>
   );
 };

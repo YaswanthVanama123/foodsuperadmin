@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import plansApi, { Plan } from '../api/plans.api';
 
 export const usePlans = () => {
@@ -6,17 +6,35 @@ export const usePlans = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Prevent duplicate API calls (React Strict Mode)
+  const isFetching = useRef(false);
+
   const fetchPlans = useCallback(async () => {
+    // Prevent concurrent requests
+    if (isFetching.current) return;
+
     try {
+      isFetching.current = true;
       setIsLoading(true);
       setError(null);
       const response = await plansApi.getAll();
-      setPlans(response.plans);
+
+      // Safe access with fallback
+      if (response && response.plans) {
+        setPlans(response.plans);
+      } else {
+        console.error('Invalid response structure from plans API:', response);
+        setPlans([]);
+        setError('Invalid response from server');
+      }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch plans');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch plans';
+      setError(errorMessage);
       console.error('Error fetching plans:', err);
+      setPlans([]);
     } finally {
       setIsLoading(false);
+      isFetching.current = false;
     }
   }, []);
 

@@ -22,6 +22,23 @@ export interface AuditLogsResponse {
   totalPages: number;
 }
 
+export interface Admin {
+  _id: string;
+  username: string;
+  email: string;
+}
+
+export interface AuditLogsPageDataResponse {
+  logs: AuditLog[];
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+  admins: Admin[];
+}
+
 interface ApiResponse<T> {
   data: T;
 }
@@ -46,6 +63,30 @@ export interface AuditStatistics {
 }
 
 const auditApi = {
+  getPageData: async (
+    page?: number,
+    limit?: number,
+    filters?: AuditLogFilters
+  ): Promise<AuditLogsPageDataResponse> => {
+    const params = new URLSearchParams();
+    if (page) params.append('page', page.toString());
+    if (limit) params.append('limit', limit.toString());
+
+    if (filters) {
+      if (filters.action) params.append('action', filters.action);
+      if (filters.resource) params.append('resource', filters.resource);
+      if (filters.userId) params.append('userId', filters.userId);
+      if (filters.status) params.append('status', filters.status);
+      if (filters.startDate) params.append('startDate', filters.startDate);
+      if (filters.endDate) params.append('endDate', filters.endDate);
+    }
+
+    const response = await apiClient.get<ApiResponse<AuditLogsPageDataResponse>>(
+      `/api/superadmin/audit-logs/page-data?${params.toString()}`
+    );
+    return response.data.data;
+  },
+
   getLogs: async (
     page?: number,
     limit?: number,

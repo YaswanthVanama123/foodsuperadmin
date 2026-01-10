@@ -41,14 +41,26 @@ export interface TopRestaurantsResponse {
 }
 
 export interface PlatformStats {
-  totalRestaurants: number;
-  activeRestaurants: number;
-  totalRevenue: number;
-  totalOrders: number;
-  totalCustomers: number;
-  avgOrderValue: number;
-  topCategory: string;
-  growthRate: number;
+  restaurants: {
+    total: number;
+    active: number;
+  };
+  revenue: {
+    totalRevenue: number;
+  };
+  users: {
+    totalCustomers: number;
+  };
+  orders: {
+    total: number;
+  };
+}
+
+export interface AnalyticsPageDataResponse {
+  revenue: PlatformRevenueResponse;
+  growth: RestaurantGrowthResponse;
+  topRestaurants: TopRestaurantsResponse;
+  stats: PlatformStats;
 }
 
 interface ApiResponse<T> {
@@ -56,6 +68,18 @@ interface ApiResponse<T> {
 }
 
 const analyticsApi = {
+  getPageData: async (startDate?: string, endDate?: string): Promise<AnalyticsPageDataResponse> => {
+    const params = new URLSearchParams();
+    if (startDate) params.append('startDate', startDate);
+    if (endDate) params.append('endDate', endDate);
+
+    const queryString = params.toString();
+    const url = `/api/superadmin/analytics/page-data${queryString ? `?${queryString}` : ''}`;
+
+    const response = await apiClient.get<ApiResponse<AnalyticsPageDataResponse>>(url);
+    return response.data.data;
+  },
+
   getPlatformRevenue: async (startDate: string, endDate: string): Promise<PlatformRevenueResponse> => {
     const params = new URLSearchParams();
     params.append('startDate', startDate);

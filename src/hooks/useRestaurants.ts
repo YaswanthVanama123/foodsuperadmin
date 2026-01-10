@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import restaurantsApi, { Restaurant } from '../api/restaurants.api';
 import { toast } from 'react-hot-toast';
 
@@ -30,12 +30,19 @@ export const useRestaurants = (): UseRestaurantsReturn => {
     search?: string;
   }>({});
 
+  // Prevent duplicate API calls (React Strict Mode)
+  const isFetching = useRef(false);
+
   const fetchRestaurants = useCallback(async (page = 1, limit = 10, search = '') => {
-    setIsLoading(true);
-    setError(null);
-    setLastFetchParams({ page, limit, search });
+    // Prevent concurrent requests
+    if (isFetching.current) return;
 
     try {
+      isFetching.current = true;
+      setIsLoading(true);
+      setError(null);
+      setLastFetchParams({ page, limit, search });
+
       const response = await restaurantsApi.getAll({ page, limit, search });
       setRestaurants(response.restaurants);
       setTotalPages(response.pagination.pages);
@@ -47,6 +54,7 @@ export const useRestaurants = (): UseRestaurantsReturn => {
       toast.error(errorMessage);
     } finally {
       setIsLoading(false);
+      isFetching.current = false;
     }
   }, []);
 

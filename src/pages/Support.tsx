@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Ticket, Search, RefreshCw } from 'lucide-react';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
@@ -16,6 +16,9 @@ const Support: React.FC = () => {
   const [selectedTicket, setSelectedTicket] = useState<SupportTicket | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  // Prevent duplicate API calls (React Strict Mode)
+  const isFetching = useRef(false);
+
   useEffect(() => {
     fetchTickets();
   }, []);
@@ -25,14 +28,19 @@ const Support: React.FC = () => {
   }, [tickets, searchQuery, statusFilter, priorityFilter]);
 
   const fetchTickets = async () => {
-    setIsLoading(true);
+    // Prevent concurrent requests
+    if (isFetching.current) return;
+
     try {
+      isFetching.current = true;
+      setIsLoading(true);
       const response = await supportApi.getTickets();
       setTickets(response.tickets);
     } catch (error) {
       console.error('Failed to fetch tickets:', error);
     } finally {
       setIsLoading(false);
+      isFetching.current = false;
     }
   };
 

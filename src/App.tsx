@@ -2,7 +2,10 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { SuperAdminAuthProvider } from './context/SuperAdminAuthContext';
+import { useSuperAdminAuth } from './context/SuperAdminAuthContext';
+import { useNotifications } from './hooks/useNotifications';
 import ProtectedRoute from './components/ProtectedRoute';
+import SuperAdminLayout from './components/layout/SuperAdminLayout';
 import {
   Login,
   Dashboard,
@@ -17,98 +20,54 @@ import {
   Reports,
 } from './pages';
 
-const App: React.FC = () => {
+// Inner component that uses hooks
+const AppContent: React.FC = () => {
+  const { isAuthenticated } = useSuperAdminAuth();
+
+  // Initialize notifications for super admin
+  useNotifications(isAuthenticated, {
+    onRestaurantRegistration: (restaurantId) => {
+      console.log('New restaurant registered:', restaurantId);
+      // Optionally trigger data refresh here
+    },
+    onSystemAlert: () => {
+      console.log('System alert received');
+      // Handle system alerts
+    },
+    onDashboardUpdate: () => {
+      console.log('Dashboard update received');
+      // Refresh dashboard data
+    },
+  });
+
   return (
-    <BrowserRouter>
-      <SuperAdminAuthProvider>
-        <Routes>
+    <>
+      <Routes>
           {/* Public Routes */}
           <Route path="/login" element={<Login />} />
 
           {/* Root redirect */}
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
-          {/* Protected Routes */}
+          {/* Protected Routes with Layout */}
           <Route
-            path="/dashboard"
             element={
               <ProtectedRoute>
-                <Dashboard />
+                <SuperAdminLayout />
               </ProtectedRoute>
             }
-          />
-          <Route
-            path="/restaurants"
-            element={
-              <ProtectedRoute>
-                <Restaurants />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admins"
-            element={
-              <ProtectedRoute>
-                <Admins />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/subscriptions"
-            element={
-              <ProtectedRoute>
-                <Subscriptions />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/plans"
-            element={
-              <ProtectedRoute>
-                <Plans />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/analytics"
-            element={
-              <ProtectedRoute>
-                <Analytics />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/settings"
-            element={
-              <ProtectedRoute>
-                <Settings />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/audit-logs"
-            element={
-              <ProtectedRoute>
-                <AuditLogs />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/support"
-            element={
-              <ProtectedRoute>
-                <Support />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/reports"
-            element={
-              <ProtectedRoute>
-                <Reports />
-              </ProtectedRoute>
-            }
-          />
+          >
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/restaurants" element={<Restaurants />} />
+            <Route path="/admins" element={<Admins />} />
+            <Route path="/subscriptions" element={<Subscriptions />} />
+            <Route path="/plans" element={<Plans />} />
+            <Route path="/analytics" element={<Analytics />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="/audit-logs" element={<AuditLogs />} />
+            <Route path="/support" element={<Support />} />
+            <Route path="/reports" element={<Reports />} />
+          </Route>
 
           {/* 404 Fallback */}
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
@@ -152,6 +111,15 @@ const App: React.FC = () => {
             },
           }}
         />
+      </>
+  );
+};
+
+const App: React.FC = () => {
+  return (
+    <BrowserRouter>
+      <SuperAdminAuthProvider>
+        <AppContent />
       </SuperAdminAuthProvider>
     </BrowserRouter>
   );

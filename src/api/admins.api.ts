@@ -62,7 +62,24 @@ export interface ActivityLog {
   timestamp: string;
 }
 
+export interface AdminsPageDataResponse {
+  admins: Admin[];
+  restaurants: Array<{
+    _id: string;
+    name: string;
+    subdomain: string;
+  }>;
+}
+
 const adminsApi = {
+  // Get admins page data (admins + restaurants) - OPTIMIZED
+  getPageData: async (limit: number = 1000): Promise<AdminsPageDataResponse> => {
+    const response = await apiClient.get<{ success: boolean; data: AdminsPageDataResponse }>(
+      `/api/super-admin/admins/page-data?limit=${limit}`
+    );
+    return response.data.data;
+  },
+
   getAll: async (params?: {
     page?: number;
     limit?: number;

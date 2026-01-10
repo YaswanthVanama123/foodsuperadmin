@@ -1,18 +1,57 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Plus, Search } from 'lucide-react';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import { PlansGrid, PlanForm } from '../components/plans';
-import { usePlans } from '../hooks/usePlans';
-import { Plan, CreatePlanRequest } from '../api/plans.api';
+import plansApi, { Plan, CreatePlanRequest } from '../api/plans.api';
 
 const Plans: React.FC = () => {
-  const { plans, isLoading, error, createPlan, updatePlan, deletePlan } = usePlans();
+  const [plans, setPlans] = useState<Plan[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [formMode, setFormMode] = useState<'create' | 'edit'>('create');
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Prevent duplicate API calls (React Strict Mode)
+  const isFetching = useRef(false);
+
+  // Fetch plans
+  useEffect(() => {
+    const fetchPlans = async () => {
+      // Prevent concurrent requests
+      if (isFetching.current) return;
+
+      try {
+        isFetching.current = true;
+        setIsLoading(true);
+        setError(null);
+
+        console.log('[Plans] Fetching plans from API...');
+        const response = await plansApi.getAll();
+        console.log('[Plans] API response:', response);
+
+        if (response && response.plans) {
+          setPlans(response.plans);
+        } else {
+          console.error('[Plans] Invalid response structure:', response);
+          setPlans([]);
+          setError('Invalid response from server');
+        }
+      } catch (err: any) {
+        console.error('[Plans] Error fetching plans:', err);
+        setError(err.response?.data?.message || err.message || 'Failed to load plans');
+        setPlans([]);
+      } finally {
+        setIsLoading(false);
+        isFetching.current = false;
+      }
+    };
+
+    fetchPlans();
+  }, []);
 
   // Filter plans
   const filteredPlans = plans.filter((plan) => {
@@ -37,29 +76,40 @@ const Plans: React.FC = () => {
 
   const handleDelete = async (plan: Plan) => {
     if (window.confirm(`Are you sure you want to delete the "${plan.name}" plan? This action cannot be undone.`)) {
-      const result = await deletePlan(plan._id);
-      if (result.success) {
+      try {
+        await plansApi.delete(plan._id);
         alert('Plan deleted successfully');
-      } else {
-        alert(`Failed to delete plan: ${result.error}`);
+        // Refresh plans
+        const response = await plansApi.getAll();
+        if (response && response.plans) {
+          setPlans(response.plans);
+        }
+      } catch (err: any) {
+        alert(`Failed to delete plan: ${err.response?.data?.message || err.message}`);
       }
     }
   };
 
   const handleFormSubmit = async (data: CreatePlanRequest) => {
-    let result;
-    if (formMode === 'create') {
-      result = await createPlan(data);
-    } else {
-      result = await updatePlan(selectedPlan!.id, data);
-    }
+    try {
+      if (formMode === 'create') {
+        await plansApi.create(data);
+        alert('Plan created successfully');
+      } else {
+        await plansApi.update(selectedPlan!._id, data);
+        alert('Plan updated successfully');
+      }
 
-    if (result.success) {
-      alert(`Plan ${formMode === 'create' ? 'created' : 'updated'} successfully`);
       setIsFormOpen(false);
       setSelectedPlan(null);
-    } else {
-      alert(`Failed to ${formMode} plan: ${result.error}`);
+
+      // Refresh plans
+      const response = await plansApi.getAll();
+      if (response && response.plans) {
+        setPlans(response.plans);
+      }
+    } catch (err: any) {
+      alert(`Failed to ${formMode} plan: ${err.response?.data?.message || err.message}`);
     }
   };
 

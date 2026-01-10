@@ -1,4 +1,6 @@
 import apiClient from './client';
+import { Plan } from './plans.api';
+import { Restaurant } from './restaurants.api';
 
 export interface Subscription {
   id: string;
@@ -20,7 +22,42 @@ export interface Subscription {
 
 export interface SubscriptionsResponse {
   subscriptions: Subscription[];
-  total: number;
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+    pages: number;
+  };
+  statistics?: {
+    totalRevenue: number;
+    activeCount: number;
+    cancelledCount: number;
+    expiredCount: number;
+    pendingCount: number;
+    monthlyCount: number;
+    yearlyCount: number;
+  };
+}
+
+export interface SubscriptionsPageDataResponse {
+  subscriptions: Subscription[];
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+    pages: number;
+  };
+  statistics: {
+    totalRevenue: number;
+    activeCount: number;
+    cancelledCount: number;
+    expiredCount: number;
+    pendingCount: number;
+    monthlyCount: number;
+    yearlyCount: number;
+  };
+  plans: Plan[];
+  restaurants: Restaurant[];
 }
 
 export interface CreateSubscriptionRequest {
@@ -57,6 +94,37 @@ interface ApiResponse<T> {
 }
 
 const subscriptionsApi = {
+  getPageData: async (params?: {
+    page?: number;
+    limit?: number;
+    status?: string;
+    billingCycle?: string;
+    autoRenew?: boolean;
+    search?: string;
+    sortBy?: string;
+    sortOrder?: string;
+    expiringSoon?: boolean;
+  }): Promise<SubscriptionsPageDataResponse> => {
+    const queryParams = new URLSearchParams();
+    if (params) {
+      if (params.page) queryParams.append('page', params.page.toString());
+      if (params.limit) queryParams.append('limit', params.limit.toString());
+      if (params.status) queryParams.append('status', params.status);
+      if (params.billingCycle) queryParams.append('billingCycle', params.billingCycle);
+      if (params.autoRenew !== undefined) queryParams.append('autoRenew', params.autoRenew.toString());
+      if (params.search) queryParams.append('search', params.search);
+      if (params.sortBy) queryParams.append('sortBy', params.sortBy);
+      if (params.sortOrder) queryParams.append('sortOrder', params.sortOrder);
+      if (params.expiringSoon !== undefined) queryParams.append('expiringSoon', params.expiringSoon.toString());
+    }
+
+    const queryString = queryParams.toString();
+    const url = `/api/superadmin/subscriptions/page-data${queryString ? `?${queryString}` : ''}`;
+
+    const response = await apiClient.get<ApiResponse<SubscriptionsPageDataResponse>>(url);
+    return response.data.data;
+  },
+
   getAll: async (): Promise<SubscriptionsResponse> => {
     const response = await apiClient.get<ApiResponse<SubscriptionsResponse>>('/api/superadmin/subscriptions');
     return response.data.data;

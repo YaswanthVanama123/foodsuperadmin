@@ -1,13 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { subDays } from 'date-fns';
 import { BarChart3, AlertCircle } from 'lucide-react';
-import analyticsApi, {
-  PlatformRevenueResponse,
-  RestaurantGrowthResponse,
-  TopRestaurantsResponse,
-} from '../api/analytics.api';
-import dashboardApi from '../api/dashboard.api';
-import { PlatformStats } from '../types';
+import analyticsApi, { AnalyticsPageDataResponse } from '../api/analytics.api';
 import {
   DateRangePicker,
   PlatformMetricsCards,
@@ -19,80 +13,41 @@ import {
 const Analytics: React.FC = () => {
   const [startDate, setStartDate] = useState<Date>(subDays(new Date(), 29));
   const [endDate, setEndDate] = useState<Date>(new Date());
-  const [isLoadingRevenue, setIsLoadingRevenue] = useState(true);
-  const [isLoadingGrowth, setIsLoadingGrowth] = useState(true);
-  const [isLoadingTopRestaurants, setIsLoadingTopRestaurants] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const [revenueData, setRevenueData] = useState<PlatformRevenueResponse | null>(
-    null
-  );
-  const [growthData, setGrowthData] = useState<RestaurantGrowthResponse | null>(
-    null
-  );
-  const [topRestaurants, setTopRestaurants] =
-    useState<TopRestaurantsResponse | null>(null);
-  const [stats, setStats] = useState<PlatformStats | null>(null);
+  const [analyticsData, setAnalyticsData] = useState<AnalyticsPageDataResponse | null>(null);
 
-  const fetchRevenueData = async () => {
+  // Prevent duplicate API calls (React Strict Mode)
+  const isFetching = useRef(false);
+
+  const fetchAnalyticsData = async () => {
+    // Prevent concurrent requests
+    if (isFetching.current) return;
+
     try {
-      setIsLoadingRevenue(true);
+      isFetching.current = true;
+      setIsLoading(true);
       setError(null);
-      const data = await analyticsApi.getPlatformRevenue(
+
+      // OPTIMIZED: Single API call for all analytics data
+      const data = await analyticsApi.getPageData(
         startDate.toISOString(),
         endDate.toISOString()
       );
-      setRevenueData(data);
+      setAnalyticsData(data);
     } catch (err) {
-      console.error('Error fetching revenue data:', err);
-      setError('Failed to load revenue data');
+      console.error('Error fetching analytics data:', err);
+      setError('Failed to load analytics data');
     } finally {
-      setIsLoadingRevenue(false);
-    }
-  };
-
-  const fetchGrowthData = async () => {
-    try {
-      setIsLoadingGrowth(true);
-      const data = await analyticsApi.getRestaurantGrowth();
-      setGrowthData(data);
-    } catch (err) {
-      console.error('Error fetching growth data:', err);
-    } finally {
-      setIsLoadingGrowth(false);
-    }
-  };
-
-  const fetchTopRestaurants = async () => {
-    try {
-      setIsLoadingTopRestaurants(true);
-      const data = await analyticsApi.getTopRestaurants();
-      setTopRestaurants(data);
-    } catch (err) {
-      console.error('Error fetching top restaurants:', err);
-    } finally {
-      setIsLoadingTopRestaurants(false);
-    }
-  };
-
-  const fetchStats = async () => {
-    try {
-      const data = await dashboardApi.getStats();
-      setStats(data);
-    } catch (err) {
-      console.error('Error fetching stats:', err);
+      setIsLoading(false);
+      isFetching.current = false;
     }
   };
 
   useEffect(() => {
-    fetchRevenueData();
+    fetchAnalyticsData();
   }, [startDate, endDate]);
-
-  useEffect(() => {
-    fetchGrowthData();
-    fetchTopRestaurants();
-    fetchStats();
-  }, []);
 
   const handleDateRangeChange = (newStartDate: Date, newEndDate: Date) => {
     setStartDate(newStartDate);
@@ -100,16 +55,16 @@ const Analytics: React.FC = () => {
   };
 
   const calculateAvgRevenuePerRestaurant = (): number => {
-    if (!stats || !stats.revenue || !stats.restaurants) return 0;
-    const totalRevenue = stats.revenue.totalRevenue || 0;
-    const activeRestaurants = stats.restaurants.active || 0;
+    if (!analyticsData?.stats) return 0;
+    const totalRevenue = analyticsData.stats.revenue.totalRevenue || 0;
+    const activeRestaurants = analyticsData.stats.restaurants.active || 0;
     if (activeRestaurants === 0) return 0;
     return totalRevenue / activeRestaurants;
   };
 
   const calculateRevenueGrowth = (): number => {
-    if (!revenueData) return 0;
-    return revenueData.growthRate || 0;
+    if (!analyticsData?.revenue) return 0;
+    return analyticsData.revenue.growthRate || 0;
   };
 
   const calculateOrdersGrowth = (): number => {
@@ -160,44 +115,54 @@ const Analytics: React.FC = () => {
           onChange={handleDateRangeChange}
         />
 
-        {/* Platform Metrics Cards */}
-        {stats && (
-          <PlatformMetricsCards
-            totalRevenue={stats.revenue?.totalRevenue || 0}
-            avgRevenuePerRestaurant={calculateAvgRevenuePerRestaurant()}
-            totalOrders={stats.orders?.total || 0}
-            activeUsers={stats.users?.totalCustomers || 0}
-            revenueGrowth={calculateRevenueGrowth()}
-            avgRevenueGrowth={0}
-            ordersGrowth={calculateOrdersGrowth()}
-            usersGrowth={calculateUsersGrowth()}
-          />
-        )}
-
-        {/* Charts Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Revenue Chart */}
-          <div className="lg:col-span-2">
-            <RevenueChart
-              data={revenueData?.data || []}
-              isLoading={isLoadingRevenue}
-            />
+        {/* Loading State */}
+        {isLoading ? (
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-violet-600 mx-auto"></div>
+              <p className="mt-4 text-gray-600">Loading analytics...</p>
+            </div>
           </div>
-
-          {/* Restaurant Growth Chart */}
-          <div className="lg:col-span-2">
-            <RestaurantGrowthChart
-              data={growthData?.data || []}
-              isLoading={isLoadingGrowth}
+        ) : analyticsData ? (
+          <>
+            {/* Platform Metrics Cards */}
+            <PlatformMetricsCards
+              totalRevenue={analyticsData.stats.revenue.totalRevenue || 0}
+              avgRevenuePerRestaurant={calculateAvgRevenuePerRestaurant()}
+              totalOrders={analyticsData.stats.orders.total || 0}
+              activeUsers={analyticsData.stats.users.totalCustomers || 0}
+              revenueGrowth={calculateRevenueGrowth()}
+              avgRevenueGrowth={0}
+              ordersGrowth={calculateOrdersGrowth()}
+              usersGrowth={calculateUsersGrowth()}
             />
-          </div>
-        </div>
 
-        {/* Top Restaurants Table */}
-        <TopRestaurantsTable
-          restaurants={topRestaurants?.restaurants || []}
-          isLoading={isLoadingTopRestaurants}
-        />
+            {/* Charts Section */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Revenue Chart */}
+              <div className="lg:col-span-2">
+                <RevenueChart
+                  data={analyticsData.revenue.data || []}
+                  isLoading={false}
+                />
+              </div>
+
+              {/* Restaurant Growth Chart */}
+              <div className="lg:col-span-2">
+                <RestaurantGrowthChart
+                  data={analyticsData.growth.data || []}
+                  isLoading={false}
+                />
+              </div>
+            </div>
+
+            {/* Top Restaurants Table */}
+            <TopRestaurantsTable
+              restaurants={analyticsData.topRestaurants.restaurants || []}
+              isLoading={false}
+            />
+          </>
+        ) : null}
       </div>
     </div>
   );

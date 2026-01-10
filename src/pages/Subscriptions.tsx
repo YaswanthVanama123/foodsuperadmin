@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Plus, Filter, Search } from 'lucide-react';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
@@ -8,24 +8,16 @@ import {
   SubscriptionForm,
   SubscriptionDetailsModal,
 } from '../components/subscriptions';
-import { useSubscriptions } from '../hooks/useSubscriptions';
-import { usePlans } from '../hooks/usePlans';
-import { Subscription } from '../api/subscriptions.api';
-import restaurantsApi, { Restaurant } from '../api/restaurants.api';
+import subscriptionsApi, { Subscription, SubscriptionsPageDataResponse } from '../api/subscriptions.api';
+import { Plan } from '../api/plans.api';
+import { Restaurant } from '../api/restaurants.api';
 
 const Subscriptions: React.FC = () => {
-  const {
-    subscriptions,
-    isLoading,
-    error,
-    createSubscription,
-    updateSubscription,
-    cancelSubscription,
-  } = useSubscriptions();
-
-  const { plans } = usePlans();
-
+  const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
+  const [plans, setPlans] = useState<Plan[]>([]);
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
@@ -35,26 +27,38 @@ const Subscriptions: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Fetch restaurants
+  // Prevent duplicate API calls (React Strict Mode)
+  const isFetching = useRef(false);
+
+  // Fetch subscriptions, plans, and restaurants (OPTIMIZED: Single API call)
   useEffect(() => {
-    const fetchRestaurants = async () => {
+    const fetchData = async () => {
+      // Prevent concurrent requests
+      if (isFetching.current) return;
+
       try {
-        const response = await restaurantsApi.getAll({ page: 1, limit: 100 });
-        console.log('[Subscriptions] Fetched restaurants:', response.restaurants);
-        setRestaurants(response.restaurants);
-      } catch (err) {
-        console.error('Failed to fetch restaurants:', err);
+        isFetching.current = true;
+        setIsLoading(true);
+        setError(null);
+
+        // OPTIMIZED: Single API call for subscriptions + plans + restaurants
+        const data = await subscriptionsApi.getPageData();
+
+        console.log('[Subscriptions] Page data:', data);
+        setSubscriptions(data.subscriptions || []);
+        setPlans(data.plans || []);
+        setRestaurants(data.restaurants || []);
+      } catch (err: any) {
+        console.error('Failed to fetch subscriptions page data:', err);
+        setError(err.response?.data?.message || 'Failed to load data');
+      } finally {
+        setIsLoading(false);
+        isFetching.current = false;
       }
     };
 
-    fetchRestaurants();
+    fetchData();
   }, []);
-
-  // Debug logging
-  useEffect(() => {
-    console.log('[Subscriptions] Restaurants:', restaurants);
-    console.log('[Subscriptions] Plans:', plans);
-  }, [restaurants, plans]);
 
   // Filter subscriptions
   const filteredSubscriptions = subscriptions.filter((sub) => {
@@ -85,31 +89,38 @@ const Subscriptions: React.FC = () => {
 
   const handleCancel = async (subscription: Subscription) => {
     if (window.confirm(`Are you sure you want to cancel the subscription for ${subscription.restaurantName}?`)) {
-      const result = await cancelSubscription(subscription.id);
-      if (result.success) {
+      try {
+        await subscriptionsApi.cancel(subscription.id);
         alert('Subscription cancelled successfully');
-      } else {
-        alert(`Failed to cancel subscription: ${result.error}`);
+        // Refresh data
+        const data = await subscriptionsApi.getPageData();
+        setSubscriptions(data.subscriptions || []);
+      } catch (err: any) {
+        alert(`Failed to cancel subscription: ${err.response?.data?.message || err.message}`);
       }
     }
   };
 
   const handleFormSubmit = async (data: any) => {
-    let result;
-    if (formMode === 'create') {
-      result = await createSubscription(data);
-    } else {
-      result = await updateSubscription(selectedSubscription!.id, {
-        endDate: data.endDate,
-      });
-    }
+    try {
+      if (formMode === 'create') {
+        await subscriptionsApi.create(data);
+        alert('Subscription created successfully');
+      } else {
+        await subscriptionsApi.update(selectedSubscription!.id, {
+          endDate: data.endDate,
+        });
+        alert('Subscription extended successfully');
+      }
 
-    if (result.success) {
-      alert(`Subscription ${formMode === 'create' ? 'created' : 'extended'} successfully`);
       setIsFormOpen(false);
       setSelectedSubscription(null);
-    } else {
-      alert(`Failed to ${formMode} subscription: ${result.error}`);
+
+      // Refresh data
+      const pageData = await subscriptionsApi.getPageData();
+      setSubscriptions(pageData.subscriptions || []);
+    } catch (err: any) {
+      alert(`Failed to ${formMode} subscription: ${err.response?.data?.message || err.message}`);
     }
   };
 

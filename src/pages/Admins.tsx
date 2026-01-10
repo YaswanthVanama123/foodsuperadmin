@@ -1,16 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { UserPlus, Users } from 'lucide-react';
 import { PageHeader, SearchBar, Pagination, ConfirmDialog } from '../components/common';
 import { AdminsTable, AdminForm, AdminDetailsModal, ResetPasswordModal } from '../components/admins';
 import Button from '../components/ui/Button';
 import Select from '../components/ui/Select';
 import adminsApi, { Admin } from '../api/admins.api';
-import restaurantsApi, { Restaurant } from '../api/restaurants.api';
 
 const Admins: React.FC = () => {
   const [admins, setAdmins] = useState<Admin[]>([]);
   const [filteredAdmins, setFilteredAdmins] = useState<Admin[]>([]);
-  const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
+  const [restaurants, setRestaurants] = useState<Array<{ _id: string; name: string; subdomain: string }>>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -30,6 +29,9 @@ const Admins: React.FC = () => {
   const [selectedAdmin, setSelectedAdmin] = useState<Admin | null>(null);
   const [formMode, setFormMode] = useState<'create' | 'edit'>('create');
 
+  // Prevent duplicate API calls (React Strict Mode)
+  const isFetching = useRef(false);
+
   useEffect(() => {
     loadData();
   }, []);
@@ -39,22 +41,24 @@ const Admins: React.FC = () => {
   }, [admins, searchQuery, selectedRestaurant, currentPage]);
 
   const loadData = async () => {
+    // Prevent concurrent requests
+    if (isFetching.current) return;
+
     try {
+      isFetching.current = true;
       setLoading(true);
       setError(null);
 
-      const [adminsResponse, restaurantsResponse] = await Promise.all([
-        adminsApi.getAll({ limit: 1000 }),
-        restaurantsApi.getAll({ limit: 100 }),
-      ]);
-
-      setAdmins(adminsResponse.admins);
-      setRestaurants(restaurantsResponse.restaurants);
+      // OPTIMIZED: Single API call for both admins and restaurants
+      const pageData = await adminsApi.getPageData(1000);
+      setAdmins(pageData.admins);
+      setRestaurants(pageData.restaurants);
     } catch (err) {
       console.error('Error loading data:', err);
       setError('Failed to load admins. Please try again.');
     } finally {
       setLoading(false);
+      isFetching.current = false;
     }
   };
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { FileText, AlertCircle } from 'lucide-react';
 import {
   AuditLogsTable,
@@ -8,7 +8,7 @@ import {
 } from '../components/audit';
 import Pagination from '../components/common/Pagination';
 import LoadingState from '../components/common/LoadingState';
-import { auditApi, adminsApi, AuditLog, AuditLogFilters as Filters } from '../api';
+import { auditApi, AuditLog, AuditLogFilters as Filters } from '../api';
 
 const AuditLogs: React.FC = () => {
   const [logs, setLogs] = useState<AuditLog[]>([]);
@@ -23,6 +23,9 @@ const AuditLogs: React.FC = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [totalLogs, setTotalLogs] = useState(0);
   const itemsPerPage = 20;
+
+  // Prevent duplicate API calls (React Strict Mode)
+  const isFetching = useRef(false);
 
   // Filter state
   const [filters, setFilters] = useState<{
@@ -41,32 +44,17 @@ const AuditLogs: React.FC = () => {
     status: '',
   });
 
-  // Fetch admins for filter dropdown
+  // Fetch audit logs and admins (OPTIMIZED: Single API call)
   useEffect(() => {
-    const fetchAdmins = async () => {
-      try {
-        const response = await adminsApi.getAll({ limit: 100 });
-        setAdmins(
-          response.admins.map((admin) => ({
-            id: admin._id,
-            name: `${admin.firstName || ''} ${admin.lastName || ''}`.trim() || admin.username,
-          }))
-        );
-      } catch (err) {
-        console.error('Failed to fetch admins:', err);
-      }
-    };
-
-    fetchAdmins();
-  }, []);
-
-  // Fetch audit logs
-  useEffect(() => {
-    const fetchLogs = async () => {
-      setIsLoading(true);
-      setError(null);
+    const fetchData = async () => {
+      // Prevent concurrent requests
+      if (isFetching.current) return;
 
       try {
+        isFetching.current = true;
+        setIsLoading(true);
+        setError(null);
+
         // Build filters
         const apiFilters: Filters = {};
         if (filters.startDate) apiFilters.startDate = filters.startDate;
@@ -76,24 +64,36 @@ const AuditLogs: React.FC = () => {
         if (filters.resource) apiFilters.resource = filters.resource;
         if (filters.status) apiFilters.status = filters.status as 'success' | 'failure';
 
-        const response = await auditApi.getLogs(
+        // OPTIMIZED: Single API call for logs + admins
+        const response = await auditApi.getPageData(
           currentPage,
           itemsPerPage,
           apiFilters
         );
 
         setLogs(response.logs || []);
-        setTotalPages(response.totalPages || 1);
-        setTotalLogs(response.total || 0);
+        setTotalPages(response.pagination?.totalPages || 1);
+        setTotalLogs(response.pagination?.total || 0);
+
+        // Set admins (only if not already set to avoid flickering)
+        if (response.admins && response.admins.length > 0) {
+          setAdmins(
+            response.admins.map((admin) => ({
+              id: admin._id,
+              name: admin.username,
+            }))
+          );
+        }
       } catch (err: any) {
         setError(err.response?.data?.message || 'Failed to load audit logs');
         console.error('Error fetching audit logs:', err);
       } finally {
         setIsLoading(false);
+        isFetching.current = false;
       }
     };
 
-    fetchLogs();
+    fetchData();
   }, [currentPage, filters]);
 
   const handleFilterChange = (newFilters: typeof filters) => {

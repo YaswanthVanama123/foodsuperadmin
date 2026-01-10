@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import subscriptionsApi, { Subscription } from '../api/subscriptions.api';
 
 export const useSubscriptions = () => {
@@ -6,17 +6,35 @@ export const useSubscriptions = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Prevent duplicate API calls (React Strict Mode)
+  const isFetching = useRef(false);
+
   const fetchSubscriptions = useCallback(async () => {
+    // Prevent concurrent requests
+    if (isFetching.current) return;
+
     try {
+      isFetching.current = true;
       setIsLoading(true);
       setError(null);
       const response = await subscriptionsApi.getAll();
-      setSubscriptions(response.subscriptions);
+
+      // Safe access with fallback
+      if (response && response.subscriptions) {
+        setSubscriptions(response.subscriptions);
+      } else {
+        console.error('Invalid response structure from subscriptions API:', response);
+        setSubscriptions([]);
+        setError('Invalid response from server');
+      }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch subscriptions');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch subscriptions';
+      setError(errorMessage);
       console.error('Error fetching subscriptions:', err);
+      setSubscriptions([]);
     } finally {
       setIsLoading(false);
+      isFetching.current = false;
     }
   }, []);
 
