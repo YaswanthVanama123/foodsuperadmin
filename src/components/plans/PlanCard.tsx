@@ -54,31 +54,31 @@ const PlanCard: React.FC<PlanCardProps> = ({ plan, onEdit, onDelete }) => {
       <CardBody>
         {/* Plan Limits */}
         <div className="space-y-3 mb-4 pb-4 border-b border-gray-200">
-          {plan.maxTables && (
+          {plan.limits?.maxTables && (
             <div className="flex items-center justify-between text-sm">
               <div className="flex items-center space-x-2">
                 <Table2 className="h-4 w-4 text-gray-400" />
                 <span className="text-gray-700">Max Tables</span>
               </div>
-              <span className="font-semibold text-gray-900">{plan.maxTables}</span>
+              <span className="font-semibold text-gray-900">{plan.limits.maxTables}</span>
             </div>
           )}
-          {plan.maxMenuItems && (
+          {plan.limits?.maxMenuItems && (
             <div className="flex items-center justify-between text-sm">
               <div className="flex items-center space-x-2">
                 <UtensilsCrossed className="h-4 w-4 text-gray-400" />
                 <span className="text-gray-700">Max Menu Items</span>
               </div>
-              <span className="font-semibold text-gray-900">{plan.maxMenuItems}</span>
+              <span className="font-semibold text-gray-900">{plan.limits.maxMenuItems}</span>
             </div>
           )}
-          {plan.maxStaff && (
+          {plan.limits?.maxAdmins && (
             <div className="flex items-center justify-between text-sm">
               <div className="flex items-center space-x-2">
                 <Users className="h-4 w-4 text-gray-400" />
-                <span className="text-gray-700">Max Staff</span>
+                <span className="text-gray-700">Max Admins</span>
               </div>
-              <span className="font-semibold text-gray-900">{plan.maxStaff}</span>
+              <span className="font-semibold text-gray-900">{plan.limits.maxAdmins}</span>
             </div>
           )}
         </div>
@@ -91,9 +91,7 @@ const PlanCard: React.FC<PlanCardProps> = ({ plan, onEdit, onDelete }) => {
               {plan.features.map((feature, index) => (
                 <li key={index} className="flex items-start space-x-2">
                   <Check className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
-                  <span className="text-sm text-gray-700">
-                    {typeof feature === 'string' ? feature : feature.name}
-                  </span>
+                  <span className="text-sm text-gray-700">{feature}</span>
                 </li>
               ))}
             </ul>

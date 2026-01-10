@@ -1,23 +1,24 @@
 import apiClient from './client';
 
-export interface PlanFeature {
-  name: string;
-  value: string | number | boolean;
-  description?: string;
+// Plan limits structure (matches backend)
+export interface PlanLimits {
+  maxTables: number;
+  maxMenuItems: number;
+  maxAdmins: number;
+  maxOrders: number;
 }
 
 export interface Plan {
   _id: string; // Changed from 'id' to '_id' to match MongoDB backend
-  name: string;
+  name: 'Free' | 'Basic' | 'Pro' | 'Enterprise';
   description: string;
   price: number;
   currency: string;
   billingCycle: 'monthly' | 'yearly';
-  features: PlanFeature[];
-  maxTables?: number;
-  maxMenuItems?: number;
-  maxStaff?: number;
+  features: string[]; // Backend returns string array, not PlanFeature objects
+  limits: PlanLimits; // Limits are nested in backend
   isActive: boolean;
+  displayOrder: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -33,29 +34,27 @@ export interface PlansResponse {
 }
 
 export interface CreatePlanRequest {
-  name: string;
+  name: 'Free' | 'Basic' | 'Pro' | 'Enterprise';
   description: string;
   price: number;
-  currency: string;
+  currency?: string;
   billingCycle: 'monthly' | 'yearly';
-  features: PlanFeature[];
-  maxTables?: number;
-  maxMenuItems?: number;
-  maxStaff?: number;
+  features: string[]; // Backend expects string array
+  limits: PlanLimits; // Backend expects nested limits object
   isActive?: boolean;
+  displayOrder?: number;
 }
 
 export interface UpdatePlanRequest {
-  name?: string;
+  name?: 'Free' | 'Basic' | 'Pro' | 'Enterprise';
   description?: string;
   price?: number;
   currency?: string;
   billingCycle?: 'monthly' | 'yearly';
-  features?: PlanFeature[];
-  maxTables?: number;
-  maxMenuItems?: number;
-  maxStaff?: number;
+  features?: string[]; // Backend expects string array
+  limits?: PlanLimits; // Backend expects nested limits object
   isActive?: boolean;
+  displayOrder?: number;
 }
 
 interface ApiResponse<T> {
@@ -66,6 +65,11 @@ interface ApiResponse<T> {
 const plansApi = {
   getAll: async (): Promise<PlansResponse> => {
     const response = await apiClient.get<ApiResponse<PlansResponse>>('/api/superadmin/plans');
+    return response.data.data;
+  },
+
+  seed: async (): Promise<{ message: string; plans: Plan[] }> => {
+    const response = await apiClient.post<ApiResponse<{ message: string; plans: Plan[] }>>('/api/superadmin/plans/seed');
     return response.data.data;
   },
 

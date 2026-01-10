@@ -19,6 +19,7 @@ import {
   Support,
   Reports,
 } from './pages';
+import Notifications from './pages/Notifications';
 
 // Inner component that uses hooks
 const AppContent: React.FC = () => {
@@ -63,6 +64,7 @@ const AppContent: React.FC = () => {
             <Route path="/subscriptions" element={<Subscriptions />} />
             <Route path="/plans" element={<Plans />} />
             <Route path="/analytics" element={<Analytics />} />
+            <Route path="/notifications" element={<Notifications />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/audit-logs" element={<AuditLogs />} />
             <Route path="/support" element={<Support />} />

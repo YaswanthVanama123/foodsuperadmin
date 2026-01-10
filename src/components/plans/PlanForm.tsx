@@ -3,7 +3,7 @@ import Modal, { ModalBody, ModalFooter } from '../ui/Modal';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
 import Select from '../ui/Select';
-import { CreatePlanRequest, Plan, PlanFeature } from '../../api/plans.api';
+import { CreatePlanRequest, Plan } from '../../api/plans.api';
 import { Plus, X } from 'lucide-react';
 
 interface PlanFormProps {
@@ -24,16 +24,20 @@ const PlanForm: React.FC<PlanFormProps> = ({
   initialData,
 }) => {
   const [formData, setFormData] = useState<CreatePlanRequest>({
-    name: '',
+    name: 'Free',
     description: '',
     price: 0,
     currency: 'USD',
     billingCycle: 'monthly',
     features: [],
-    maxTables: 10,
-    maxMenuItems: 50,
-    maxStaff: 5,
+    limits: {
+      maxTables: 10,
+      maxMenuItems: 50,
+      maxAdmins: 3,
+      maxOrders: 1000,
+    },
     isActive: true,
+    displayOrder: 0,
   });
 
   const [newFeature, setNewFeature] = useState<string>('');
@@ -47,24 +51,27 @@ const PlanForm: React.FC<PlanFormProps> = ({
         currency: initialData.currency,
         billingCycle: initialData.billingCycle,
         features: initialData.features,
-        maxTables: initialData.maxTables,
-        maxMenuItems: initialData.maxMenuItems,
-        maxStaff: initialData.maxStaff,
+        limits: initialData.limits,
         isActive: initialData.isActive,
+        displayOrder: initialData.displayOrder,
       });
     } else if (mode === 'create') {
       // Reset form for create mode
       setFormData({
-        name: '',
+        name: 'Free',
         description: '',
         price: 0,
         currency: 'USD',
         billingCycle: 'monthly',
         features: [],
-        maxTables: 10,
-        maxMenuItems: 50,
-        maxStaff: 5,
+        limits: {
+          maxTables: 10,
+          maxMenuItems: 50,
+          maxAdmins: 3,
+          maxOrders: 1000,
+        },
         isActive: true,
+        displayOrder: 0,
       });
     }
   }, [initialData, mode, isOpen]);
@@ -79,15 +86,22 @@ const PlanForm: React.FC<PlanFormProps> = ({
     }));
   };
 
+  const handleLimitChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      limits: {
+        ...prev.limits!,
+        [name]: parseInt(value) || 0,
+      },
+    }));
+  };
+
   const handleAddFeature = () => {
     if (newFeature.trim()) {
-      const feature: PlanFeature = {
-        name: newFeature.trim(),
-        value: true,
-      };
       setFormData((prev) => ({
         ...prev,
-        features: [...prev.features, feature],
+        features: [...prev.features, newFeature.trim()],
       }));
       setNewFeature('');
     }
@@ -120,14 +134,17 @@ const PlanForm: React.FC<PlanFormProps> = ({
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Plan Name
               </label>
-              <Input
-                type="text"
+              <Select
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
-                placeholder="e.g., Starter, Professional, Enterprise"
                 required
-              />
+              >
+                <option value="Free">Free</option>
+                <option value="Basic">Basic</option>
+                <option value="Pro">Pro</option>
+                <option value="Enterprise">Enterprise</option>
+              </Select>
             </div>
 
             {/* Description */}
@@ -194,46 +211,84 @@ const PlanForm: React.FC<PlanFormProps> = ({
               </Select>
             </div>
 
+            {/* Display Order */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Display Order
+              </label>
+              <Input
+                type="number"
+                name="displayOrder"
+                value={formData.displayOrder || 0}
+                onChange={handleChange}
+                placeholder="0"
+                min="0"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Lower numbers appear first
+              </p>
+            </div>
+
             {/* Plan Limits */}
-            <div className="grid grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Max Tables
-                </label>
-                <Input
-                  type="number"
-                  name="maxTables"
-                  value={formData.maxTables || ''}
-                  onChange={handleChange}
-                  placeholder="10"
-                  min="1"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Max Menu Items
-                </label>
-                <Input
-                  type="number"
-                  name="maxMenuItems"
-                  value={formData.maxMenuItems || ''}
-                  onChange={handleChange}
-                  placeholder="50"
-                  min="1"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Max Staff
-                </label>
-                <Input
-                  type="number"
-                  name="maxStaff"
-                  value={formData.maxStaff || ''}
-                  onChange={handleChange}
-                  placeholder="5"
-                  min="1"
-                />
+            <div className="border-t border-gray-200 pt-4">
+              <h3 className="text-sm font-medium text-gray-900 mb-3">Plan Limits</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Max Tables
+                  </label>
+                  <Input
+                    type="number"
+                    name="maxTables"
+                    value={formData.limits?.maxTables || ''}
+                    onChange={handleLimitChange}
+                    placeholder="10"
+                    min="1"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Max Menu Items
+                  </label>
+                  <Input
+                    type="number"
+                    name="maxMenuItems"
+                    value={formData.limits?.maxMenuItems || ''}
+                    onChange={handleLimitChange}
+                    placeholder="50"
+                    min="1"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Max Admins
+                  </label>
+                  <Input
+                    type="number"
+                    name="maxAdmins"
+                    value={formData.limits?.maxAdmins || ''}
+                    onChange={handleLimitChange}
+                    placeholder="3"
+                    min="1"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Max Orders
+                  </label>
+                  <Input
+                    type="number"
+                    name="maxOrders"
+                    value={formData.limits?.maxOrders || ''}
+                    onChange={handleLimitChange}
+                    placeholder="1000"
+                    min="0"
+                    required
+                  />
+                </div>
               </div>
             </div>
 
@@ -272,9 +327,7 @@ const PlanForm: React.FC<PlanFormProps> = ({
                       key={index}
                       className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded-lg"
                     >
-                      <span className="text-sm text-gray-700">
-                        {typeof feature === 'string' ? feature : feature.name}
-                      </span>
+                      <span className="text-sm text-gray-700">{feature}</span>
                       <button
                         type="button"
                         onClick={() => handleRemoveFeature(index)}

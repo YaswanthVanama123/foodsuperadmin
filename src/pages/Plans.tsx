@@ -113,6 +113,33 @@ const Plans: React.FC = () => {
     }
   };
 
+  const handleSeedPlans = async () => {
+    if (plans.length > 0) {
+      if (!window.confirm('This will delete all existing plans and create default plans. Are you sure?')) {
+        return;
+      }
+    }
+
+    try {
+      setIsLoading(true);
+      console.log('[Plans] Seeding plans...');
+      const result = await plansApi.seed();
+      console.log('[Plans] Seed result:', result);
+      alert(`Successfully seeded ${result.plans.length} plans`);
+
+      // Refresh plans
+      const response = await plansApi.getAll();
+      if (response && response.plans) {
+        setPlans(response.plans);
+      }
+    } catch (err: any) {
+      console.error('[Plans] Error seeding plans:', err);
+      alert(`Failed to seed plans: ${err.response?.data?.message || err.message}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const activePlans = plans.filter((p) => p.isActive);
   const inactivePlans = plans.filter((p) => !p.isActive);
 
@@ -204,10 +231,16 @@ const Plans: React.FC = () => {
                   {searchQuery ? 'No plans match your search' : 'No plans available'}
                 </p>
                 {!searchQuery && (
-                  <Button onClick={handleCreateNew} className="flex items-center space-x-2 mx-auto">
-                    <Plus className="h-5 w-5" />
-                    <span>Create Your First Plan</span>
-                  </Button>
+                  <div className="flex justify-center gap-4">
+                    <Button onClick={handleSeedPlans} className="flex items-center space-x-2" variant="outline">
+                      <Plus className="h-5 w-5" />
+                      <span>Seed Default Plans (Free, Basic, Pro, Enterprise)</span>
+                    </Button>
+                    <Button onClick={handleCreateNew} className="flex items-center space-x-2">
+                      <Plus className="h-5 w-5" />
+                      <span>Create Custom Plan</span>
+                    </Button>
+                  </div>
                 )}
               </div>
             )}
