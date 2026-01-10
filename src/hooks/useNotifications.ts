@@ -11,11 +11,11 @@ const FCM_TOKEN_STORAGE_KEY = 'superadmin_fcm_token_registered';
 // API helper for FCM token management
 const fcmTokenApi = {
   register: async (token: string) => {
-    const response = await apiClient.post('/superadmin/fcm-token', { token });
+    const response = await apiClient.post('/api/super-admin/fcm-token', { token });
     return response.data;
   },
   remove: async (token: string) => {
-    const response = await apiClient.delete('/superadmin/fcm-token', { data: { token } });
+    const response = await apiClient.delete('/api/super-admin/fcm-token', { data: { token } });
     return response.data;
   },
 };
@@ -189,6 +189,14 @@ export const useNotifications = (
    */
   const registerToken = useCallback(async () => {
     if (!isAuthenticated || !firebaseService.isReady()) {
+      console.log('⏸️ [FCM] Skipping token registration - not authenticated or Firebase not ready');
+      return;
+    }
+
+    // Double-check authentication token exists
+    const authToken = localStorage.getItem('superadmin_token');
+    if (!authToken) {
+      console.warn('⚠️ [FCM] No authentication token found - user may not be logged in yet');
       return;
     }
 
@@ -230,8 +238,14 @@ export const useNotifications = (
 
       console.log('✅ FCM token registered with backend successfully!');
       console.log('💾 Token saved to localStorage');
-    } catch (error) {
-      console.error('❌ Failed to register FCM token:', error);
+    } catch (error: any) {
+      // Check if it's an authentication error
+      if (error.response?.status === 401) {
+        console.warn('⚠️ [FCM] Authentication required - token registration will retry after login');
+        tokenRegistered.current = false;
+      } else {
+        console.error('❌ Failed to register FCM token:', error);
+      }
     }
   }, [isAuthenticated]);
 

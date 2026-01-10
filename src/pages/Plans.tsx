@@ -32,16 +32,25 @@ const Plans: React.FC = () => {
         console.log('[Plans] Fetching plans from API...');
         const response = await plansApi.getAll();
         console.log('[Plans] API response:', response);
+        console.log('[Plans] Response type:', typeof response);
+        console.log('[Plans] Response.plans:', response?.plans);
 
         if (response && response.plans) {
+          console.log('[Plans] Setting plans:', response.plans.length, 'plans found');
           setPlans(response.plans);
         } else {
           console.error('[Plans] Invalid response structure:', response);
+          console.error('[Plans] Expected { plans: [], pagination: {} } but got:', response);
           setPlans([]);
-          setError('Invalid response from server');
+          setError('Invalid response from server. Please check console for details.');
         }
       } catch (err: any) {
         console.error('[Plans] Error fetching plans:', err);
+        console.error('[Plans] Error details:', {
+          message: err.message,
+          response: err.response?.data,
+          status: err.response?.status,
+        });
         setError(err.response?.data?.message || err.message || 'Failed to load plans');
         setPlans([]);
       } finally {
